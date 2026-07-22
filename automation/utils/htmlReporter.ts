@@ -13,6 +13,7 @@ export class HtmlReporter {
     Logger.info('Generating HTML Reports (execution-report.html, dashboard.html, trends.html)...');
 
     fs.writeFileSync(path.join(htmlDir, 'execution-report.html'), this.buildExecutionReportHtml(testCases, metrics), 'utf-8');
+    fs.writeFileSync(path.join(htmlDir, 'index.html'), this.buildExecutionReportHtml(testCases, metrics), 'utf-8');
     fs.writeFileSync(path.join(htmlDir, 'dashboard.html'), this.buildDashboardHtml(testCases, metrics), 'utf-8');
     fs.writeFileSync(path.join(htmlDir, 'trends.html'), this.buildTrendsHtml(metrics), 'utf-8');
 
