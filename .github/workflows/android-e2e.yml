@@ -136,7 +136,7 @@ jobs:
             screenshots/
           retention-days: 30
 
-      # Stage 19 & 20: Prepare Site Directory for Pages
+      # Stage 19 & 20: Prepare Site Directory & Push to gh-pages Branch
       - name: Stage 19 & 20 - Prepare GitHub Pages Site Directory
         if: always()
         run: |
@@ -156,6 +156,14 @@ jobs:
 
           # Copy to build history
           cp -r public/reports/latest/* public/reports/history/build-${{ github.run_number }}/
+
+      - name: Deploy to gh-pages Branch
+        uses: peaceiris/actions-gh-pages@v3
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          keep_files: true
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
