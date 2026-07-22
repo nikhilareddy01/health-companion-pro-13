@@ -40,7 +40,7 @@ jobs:
           java-version: '17'
 
       # Stage 3: Setup Node.js & Python Environment
-      - name: Setup Node.js (v20) & Python (3.12)
+      - name: Setup Node.js (v20)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -136,8 +136,8 @@ jobs:
             screenshots/
           retention-days: 30
 
-      # Stage 19 & 20: Deploy Reports & Historical Archiving to GitHub Pages
-      - name: Stage 19 & 20 - Prepare GitHub Pages & Execution History
+      # Stage 19 & 20: Prepare Site Directory for Pages
+      - name: Stage 19 & 20 - Prepare GitHub Pages Site Directory
         if: always()
         run: |
           mkdir -p public/reports/latest public/reports/history/build-${{ github.run_number }}
@@ -151,30 +151,17 @@ jobs:
           cp -r Test\ Results/Screenshots public/reports/latest/screenshots || true
           cp -r Test\ Results/Logs public/reports/latest/logs || true
 
+          # Copy root files for direct index access
+          cp -r Test\ Results/HTML/* public/ || true
+
           # Copy to build history
           cp -r public/reports/latest/* public/reports/history/build-${{ github.run_number }}/
 
-          # Create index page for Pages root redirect
-          cat << 'EOF' > public/index.html
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta http-equiv="refresh" content="0; url=reports/latest/execution-report.html" />
-            <title>Android E2E Test Reports</title>
-          </head>
-          <body>
-            <p>Redirecting to <a href="reports/latest/execution-report.html">Latest E2E Execution Report</a>...</p>
-          </body>
-          </html>
-          EOF
-
-      - name: Deploy Reports to GitHub Pages Branch
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
         if: always()
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
-          keep_files: true
+          path: ./public
 
       # Stage 21: Publish GitHub Actions Step Summary
       - name: Stage 21 - Publish GitHub Action Summary
@@ -187,3 +174,16 @@ jobs:
             echo "Build Number: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
             echo "Execution Status: Completed" >> $GITHUB_STEP_SUMMARY
           fi
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: build-and-test
+    if: always()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
