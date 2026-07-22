@@ -9,9 +9,14 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:e2e": "npx tsx automation/runners/testRunner.ts",
+    "build:reports": "npx tsx automation/runners/generateReports.ts"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
     "@cloudflare/vite-plugin": "^1.25.5",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -68,6 +73,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint-community/eslint-utils": "^4.9.1",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^1.5.1",
     "@types/node": "^22.16.5",
@@ -79,6 +85,7 @@
     "eslint-plugin-prettier": "^5.2.6",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "eslint-visitor-keys": "^5.0.1",
     "globals": "^15.15.0",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",

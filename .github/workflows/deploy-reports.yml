@@ -1,0 +1,35 @@
+name: Deploy E2E Reports to GitHub Pages
+
+on:
+  workflow_run:
+    workflows: ["Android E2E Appium Automation & Reporting Pipeline"]
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages branch or workspace
+        uses: actions/checkout@v4
+
+      - name: Download Test Execution Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: appium-e2e-test-results
+          path: ./downloaded-results
+        continue-on-error: true
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./downloaded-results/HTML
+          destination_dir: reports/latest
+          keep_files: true
