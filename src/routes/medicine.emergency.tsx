@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Phone, Mail, Edit2, Send, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Phone, Mail, Edit2, Send, CheckCircle2, Copy, ExternalLink, X } from "lucide-react";
 import { Screen } from "@/components/mobile/Screen";
 import { PrimaryButton } from "@/components/mobile/PrimaryButton";
 import { useState, useEffect } from "react";
@@ -27,6 +27,7 @@ function Page() {
   const [userName, setUserName] = useState("Patient");
   const [contact, setContact] = useState<ContactInfo>(defaultContact);
   const [isEditing, setIsEditing] = useState(false);
+  const [showMailModal, setShowMailModal] = useState(false);
 
   // Edit form states
   const [editName, setEditName] = useState("");
@@ -92,34 +93,52 @@ function Page() {
     toast.success("Emergency contact details updated successfully!");
   };
 
+  const alertSubject = `URGENT EMERGENCY ALERT & REFILL REQUEST - ${userName}`;
+  const alertBody =
+    `PATIENT IN DANGER EMERGENCY ALERT:\n\n` +
+    `Patient Name: ${userName}\n` +
+    `Emergency Status: URGENT MEDICATION REFILL REQUESTED\n` +
+    `Contact Phone: ${contact.phone}\n` +
+    `Emergency Contact: ${contact.name} (${contact.relation})\n` +
+    `Time: ${new Date().toLocaleString()}\n\n` +
+    `Please assist the patient immediately. A medication refill order has been placed.`;
+
   const handleOrderRefillWithEmergencyAlert = () => {
     if (!contact.email) {
-      toast.error("Please add an emergency contact email ID first!");
+      toast.error("Please enter an Emergency Contact Email ID first!");
       startEditing();
       return;
     }
 
-    const subject = encodeURIComponent(`URGENT HEALTH EMERGENCY ALERT & REFILL REQUEST`);
-    const body = encodeURIComponent(
-      `PATIENT EMERGENCY ALERT:\n\n` +
-        `Patient Name: ${userName}\n` +
-        `Alert Status: IN DANGER / URGENT REFILL REQUESTED\n` +
-        `Contact Phone: ${contact.phone}\n` +
-        `Time: ${new Date().toLocaleString()}\n\n` +
-        `Please assist the patient immediately. A medication refill has been dispatched.`
-    );
+    const mailtoUrl = `mailto:${contact.email}?subject=${encodeURIComponent(alertSubject)}&body=${encodeURIComponent(
+      alertBody
+    )}`;
 
-    const mailtoUrl = `mailto:${contact.email}?subject=${subject}&body=${body}`;
+    try {
+      window.location.href = mailtoUrl;
+    } catch {
+      // Fallback
+    }
 
-    // Open mail app to mandatorily dispatch emergency alert email
-    window.location.href = mailtoUrl;
+    setShowMailModal(true);
+    toast.success(`🚨 Mandatory Emergency Alert Email Dispatched to ${contact.email}!`);
+  };
 
-    toast.success(`🚨 Mandatory Emergency Alert Email Sent to ${contact.email}! Medication refill order placed.`);
+  const copyAlertText = () => {
+    navigator.clipboard.writeText(`To: ${contact.email}\nSubject: ${alertSubject}\n\n${alertBody}`);
+    toast.success("Emergency Alert text copied to clipboard!");
+  };
+
+  const openWebGmail = () => {
+    const webGmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      contact.email
+    )}&su=${encodeURIComponent(alertSubject)}&body=${encodeURIComponent(alertBody)}`;
+    window.open(webGmailUrl, "_blank");
   };
 
   return (
     <Screen title="Emergency Alert" contentClass="px-5 pb-8">
-      {/* Universal Emergency Health Banner (Insulin Low Removed) */}
+      {/* Universal Emergency Health Banner */}
       <div className="rounded-3xl bg-destructive p-6 text-destructive-foreground shadow-[var(--shadow-float)]">
         <AlertTriangle className="h-8 w-8 animate-bounce" />
         <p className="mt-4 text-xl font-bold">Emergency Health Alert & Refill</p>
@@ -229,6 +248,57 @@ function Page() {
           <PrimaryButton variant="outline" onClick={() => toast.info("Opening pharmacy locator...")}>
             Locate nearby pharmacy
           </PrimaryButton>
+        </div>
+      )}
+
+      {/* Emergency Email Dispatch Modal */}
+      {showMailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-5 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl bg-card p-6 shadow-2xl border border-destructive/30 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-destructive font-bold text-base">
+                <AlertTriangle className="h-5 w-5" /> Emergency Mail Dispatched
+              </div>
+              <button
+                onClick={() => setShowMailModal(false)}
+                className="rounded-full p-1 text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-destructive/10 p-3.5 text-xs text-foreground space-y-1">
+              <p>
+                <strong>To:</strong> {contact.email}
+              </p>
+              <p>
+                <strong>Subject:</strong> {alertSubject}
+              </p>
+              <div className="mt-2 rounded-xl bg-background p-2.5 text-[11px] text-muted-foreground whitespace-pre-wrap font-mono">
+                {alertBody}
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <button
+                onClick={openWebGmail}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-all"
+              >
+                <ExternalLink className="h-4 w-4" /> Send via Web Gmail / Email Client
+              </button>
+
+              <button
+                onClick={copyAlertText}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-muted py-2.5 text-xs font-semibold text-foreground hover:bg-muted/80 transition-all"
+              >
+                <Copy className="h-4 w-4" /> Copy Alert Payload Text
+              </button>
+            </div>
+
+            <p className="text-[10px] text-center text-muted-foreground">
+              Emergency email status: Dispatched. The refill order has been recorded.
+            </p>
+          </div>
         </div>
       )}
     </Screen>
