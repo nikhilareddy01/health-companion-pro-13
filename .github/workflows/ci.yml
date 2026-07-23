@@ -1,0 +1,42 @@
+name: CI - TypeCheck, Lint & Build
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  validate:
+    name: Build & Code Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Type Check (TypeScript)
+        run: npx tsc --noEmit
+
+      - name: Lint Code (ESLint)
+        run: npm run lint
+
+      - name: Build Web Application
+        run: npm run build
+
+      - name: Validate Backend (if present)
+        run: |
+          if [ -d "Backend" ]; then
+            cd Backend
+            npm install
+            npm run build
+          fi

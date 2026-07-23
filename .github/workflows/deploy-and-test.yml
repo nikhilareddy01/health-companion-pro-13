@@ -13,7 +13,7 @@ on:
         default: 'all'
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -31,30 +31,34 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install Project Dependencies
         run: |
           npm install
 
-      # Stage 3: Build Application
-      - name: Stage 3 - Build Production Web App
+      # Stage 3: Type Checking & Linting
+      - name: Stage 3 - Type Check & Linting
         run: |
-          npm run build || true
-          mkdir -p dist
-          if [ ! -f "dist/index.html" ]; then
-            cp public/index.html dist/index.html || true
+          npx tsc --noEmit
+          npm run lint
+
+      # Stage 4: Build Application
+      - name: Stage 4 - Build Production Web App
+        run: |
+          npm run build
+          mkdir -p dist-pages
+          if [ -d "dist/client" ]; then
+            cp -r dist/client/* dist-pages/
+          else
+            cp -r dist/* dist-pages/
           fi
 
-      # Stage 4: Static Analysis
-      - name: Stage 4 - Static Code Analysis & Linter
-        run: |
-          npm run lint || true
-
-      # Stage 5: Upload Pages Artifact & Deploy
+      # Stage 5: Upload Pages Artifact
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ./dist-pages
 
   deploy-pages:
     name: Deploy to GitHub Pages
@@ -63,6 +67,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Stage 5 - Deploy to GitHub Pages
         id: deployment
@@ -72,7 +78,7 @@ jobs:
     name: Live Selenium E2E Automation Suite
     needs: deploy-pages
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && needs.deploy-pages.result == 'success'
     steps:
       - name: Stage 1 - Checkout Code
         uses: actions/checkout@v4
@@ -91,12 +97,11 @@ jobs:
         run: |
           npm install
           pip install pandas openpyxl reportlab pillow selenium webdriver-manager
-          npm install -g selenium-webdriver
 
       # Stage 6 & 7: Wait & Verify Live Deployment Availability
       - name: Stage 6 & 7 - Wait & Verify Live Deployment Availability
         run: |
-          export BASE_URL="${{ steps.deployment.outputs.page_url }}"
+          export BASE_URL="${{ needs.deploy-pages.outputs.page_url }}"
           if [ -z "$BASE_URL" ]; then
             export BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
           fi
@@ -116,10 +121,11 @@ jobs:
       # Stage 8: Run Selenium E2E Tests against LIVE URL
       - name: Stage 8 - Execute Selenium E2E Test Suite Against LIVE URL
         env:
-          BASE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          BASE_URL: "${{ needs.deploy-pages.outputs.page_url }}"
           HEADLESS: "true"
         run: |
-          echo "Executing Selenium E2E Automation Suite against LIVE URL: $BASE_URL"
+          TARGET_URL="${BASE_URL:-https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/}"
+          echo "Executing Selenium E2E Automation Suite against LIVE URL: $TARGET_URL"
           mkdir -p "Test Results/Excel" "Test Results/HTML" "Test Results/JSON" "Test Results/Summary" "Test Results/PDF" "Test Results/Screenshots" "Test Results/Logs"
           npm run test:selenium || npx tsx automation/runners/seleniumRunner.ts || true
 
@@ -127,7 +133,7 @@ jobs:
       - name: Stage 9 & 10 - Generate Multi-Format Reports
         if: always()
         run: |
-          npm run build:selenium-reports || npx tsx automation/runners/generateSeleniumReports.ts || true
+          npm run build:selenium-reports || npx tsx automation/runners/generateReports.ts || true
 
       # Stage 11: Upload All Artifacts (30-day retention)
       - name: Stage 11 - Upload Artifacts
@@ -139,6 +145,7 @@ jobs:
             Test Results/
             logs/
             screenshots/
+          if-no-files-found: ignore
           retention-days: 30
 
       # Stage 12: Publish GitHub Action Summary
@@ -149,6 +156,6 @@ jobs:
             cat "Test Results/Summary/summary.md" >> $GITHUB_STEP_SUMMARY
           else
             echo "# Live GitHub Pages E2E Execution Summary" >> $GITHUB_STEP_SUMMARY
-            echo "Target URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
+            echo "Target URL: ${{ needs.deploy-pages.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
             echo "Status: Completed" >> $GITHUB_STEP_SUMMARY
           fi

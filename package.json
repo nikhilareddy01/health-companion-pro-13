@@ -13,7 +13,7 @@
     "test:e2e": "npx tsx automation/runners/testRunner.ts",
     "test:selenium": "npx tsx automation/runners/seleniumRunner.ts",
     "build:reports": "npx tsx automation/runners/generateReports.ts",
-    "build:selenium-reports": "npx tsx automation/runners/seleniumRunner.ts"
+    "build:selenium-reports": "npx tsx automation/runners/generateReports.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
@@ -75,7 +75,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@eslint-community/eslint-utils": "^4.9.1",
+    "@eslint-community/eslint-utils": "^4.10.1",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^1.5.1",
     "@types/node": "^22.16.5",

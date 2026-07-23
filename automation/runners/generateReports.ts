@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import { HtmlReporter } from '../utils/htmlReporter.js';
 import { SummaryReporter } from '../utils/summaryReporter.js';
 import { ExcelReporter } from '../utils/excelReporter.js';

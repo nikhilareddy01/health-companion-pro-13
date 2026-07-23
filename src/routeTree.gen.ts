@@ -26,6 +26,7 @@ import { Route as DiseasesRouteImport } from './routes/diseases'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DailySummaryRouteImport } from './routes/daily-summary'
 import { Route as DailyPlanRouteImport } from './routes/daily-plan'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AiRecommendationRouteImport } from './routes/ai-recommendation'
 import { Route as IndexRouteImport } from './routes/index'
@@ -148,6 +149,11 @@ const DailySummaryRoute = DailySummaryRouteImport.update({
 const DailyPlanRoute = DailyPlanRouteImport.update({
   id: '/daily-plan',
   path: '/daily-plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-recommendation': typeof AiRecommendationRoute
   '/calendar': typeof CalendarRoute
+  '/chat': typeof ChatRoute
   '/daily-plan': typeof DailyPlanRoute
   '/daily-summary': typeof DailySummaryRoute
   '/dashboard': typeof DashboardRoute
@@ -402,6 +409,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-recommendation': typeof AiRecommendationRoute
   '/calendar': typeof CalendarRoute
+  '/chat': typeof ChatRoute
   '/daily-plan': typeof DailyPlanRoute
   '/daily-summary': typeof DailySummaryRoute
   '/dashboard': typeof DashboardRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai-recommendation': typeof AiRecommendationRoute
   '/calendar': typeof CalendarRoute
+  '/chat': typeof ChatRoute
   '/daily-plan': typeof DailyPlanRoute
   '/daily-summary': typeof DailySummaryRoute
   '/dashboard': typeof DashboardRoute
@@ -519,6 +528,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-recommendation'
     | '/calendar'
+    | '/chat'
     | '/daily-plan'
     | '/daily-summary'
     | '/dashboard'
@@ -576,6 +586,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-recommendation'
     | '/calendar'
+    | '/chat'
     | '/daily-plan'
     | '/daily-summary'
     | '/dashboard'
@@ -633,6 +644,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-recommendation'
     | '/calendar'
+    | '/chat'
     | '/daily-plan'
     | '/daily-summary'
     | '/dashboard'
@@ -691,6 +703,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiRecommendationRoute: typeof AiRecommendationRoute
   CalendarRoute: typeof CalendarRoute
+  ChatRoute: typeof ChatRoute
   DailyPlanRoute: typeof DailyPlanRoute
   DailySummaryRoute: typeof DailySummaryRoute
   DashboardRoute: typeof DashboardRoute
@@ -864,6 +877,13 @@ declare module '@tanstack/react-router' {
       path: '/daily-plan'
       fullPath: '/daily-plan'
       preLoaderRoute: typeof DailyPlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -1139,6 +1159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiRecommendationRoute: AiRecommendationRoute,
   CalendarRoute: CalendarRoute,
+  ChatRoute: ChatRoute,
   DailyPlanRoute: DailyPlanRoute,
   DailySummaryRoute: DailySummaryRoute,
   DashboardRoute: DashboardRoute,

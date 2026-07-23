@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   Outlet,
   Link,
@@ -111,6 +112,22 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    const isCap = typeof window !== "undefined" && !!(window as any).Capacitor;
+    const isEmbed = typeof window !== "undefined" && window.self !== window.top;
+
+    // Reset classes first
+    document.body.classList.remove("native-app", "simulator-view", "desktop-web");
+
+    if (isCap) {
+      document.body.classList.add("native-app");
+    } else if (isEmbed) {
+      document.body.classList.add("simulator-view");
+    } else {
+      document.body.classList.add("desktop-web");
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

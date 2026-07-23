@@ -8,61 +8,63 @@ function createSupabaseClient() {
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
+  const mockAuth = {
+    signUp: async ({ email, password, options }: any) => {
+      const name = options?.data?.name || email.split('@')[0];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('demo_name', name);
+        localStorage.setItem('demo_email', email);
+      }
+      return { data: { user: { id: 'demo-user-id', email, user_metadata: { name } } }, error: null };
+    },
+    signInWithPassword: async ({ email }: any) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('demo_email', email);
+        if (!localStorage.getItem('demo_name')) {
+          localStorage.setItem('demo_name', email.split('@')[0]);
+        }
+      }
+      return { data: { user: { id: 'demo-user-id', email, user_metadata: { name: email.split('@')[0] } } }, error: null };
+    },
+    signOut: async () => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('demo_email');
+        localStorage.removeItem('demo_name');
+      }
+      return { error: null };
+    },
+    getUser: async () => {
+      const email = typeof window !== 'undefined' ? localStorage.getItem('demo_email') : null;
+      const name = typeof window !== 'undefined' ? localStorage.getItem('demo_name') : null;
+      if (email) {
+        return { data: { user: { id: 'demo-user-id', email, user_metadata: { name } } }, error: null };
+      }
+      return { data: { user: null }, error: null };
+    },
+    getSession: async () => {
+      const email = typeof window !== 'undefined' ? localStorage.getItem('demo_email') : null;
+      if (email) {
+        return {
+          data: {
+            session: {
+              access_token: 'demo-session-token',
+              user: { id: 'demo-user-id', email }
+            }
+          },
+          error: null
+        };
+      }
+      return { data: { session: null }, error: null };
+    },
+    onAuthStateChange: (callback: any) => {
+      return { data: { subscription: { unsubscribe: () => {} } } };
+    }
+  };
+
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY || SUPABASE_URL.includes('yourproject') || SUPABASE_URL === 'YOUR_SUPABASE_URL') {
     console.warn('[Supabase] Missing or placeholder environment variable(s). falling back to offline/demo mode.');
     return {
-      auth: {
-        signUp: async ({ email, password, options }: any) => {
-          const name = options?.data?.name || email.split('@')[0];
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('demo_name', name);
-            localStorage.setItem('demo_email', email);
-          }
-          return { data: { user: { id: 'demo-user-id', email, user_metadata: { name } } }, error: null };
-        },
-        signInWithPassword: async ({ email }: any) => {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('demo_email', email);
-            if (!localStorage.getItem('demo_name')) {
-              localStorage.setItem('demo_name', email.split('@')[0]);
-            }
-          }
-          return { data: { user: { id: 'demo-user-id', email, user_metadata: { name: email.split('@')[0] } } }, error: null };
-        },
-        signOut: async () => {
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('demo_email');
-            localStorage.removeItem('demo_name');
-          }
-          return { error: null };
-        },
-        getUser: async () => {
-          const email = typeof window !== 'undefined' ? localStorage.getItem('demo_email') : null;
-          const name = typeof window !== 'undefined' ? localStorage.getItem('demo_name') : null;
-          if (email) {
-            return { data: { user: { id: 'demo-user-id', email, user_metadata: { name } } }, error: null };
-          }
-          return { data: { user: null }, error: null };
-        },
-        getSession: async () => {
-          const email = typeof window !== 'undefined' ? localStorage.getItem('demo_email') : null;
-          if (email) {
-            return {
-              data: {
-                session: {
-                  access_token: 'demo-session-token',
-                  user: { id: 'demo-user-id', email }
-                }
-              },
-              error: null
-            };
-          }
-          return { data: { session: null }, error: null };
-        },
-        onAuthStateChange: (callback: any) => {
-          return { data: { subscription: { unsubscribe: () => {} } } };
-        }
-      },
+      auth: mockAuth,
       from: () => ({
         select: () => Promise.resolve({ data: [], error: null }),
         insert: () => Promise.resolve({ data: null, error: null }),
@@ -74,19 +76,66 @@ function createSupabaseClient() {
     } as any;
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  const realClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
     }
   });
+
+  return {
+    ...realClient,
+    auth: {
+      ...realClient.auth,
+      signUp: async (args: any) => {
+        try {
+          const res = await realClient.auth.signUp(args);
+          if (res.error && (res.error.message?.includes('Failed to fetch') || res.error.name === 'AuthRetryableFetchError')) {
+            return mockAuth.signUp(args);
+          }
+          return res;
+        } catch (err: any) {
+          console.warn('[Supabase] Network error during signUp, using demo fallback:', err);
+          return mockAuth.signUp(args);
+        }
+      },
+      signInWithPassword: async (args: any) => {
+        try {
+          const res = await realClient.auth.signInWithPassword(args);
+          if (res.error && (res.error.message?.includes('Failed to fetch') || res.error.name === 'AuthRetryableFetchError')) {
+            return mockAuth.signInWithPassword(args);
+          }
+          return res;
+        } catch (err: any) {
+          console.warn('[Supabase] Network error during signInWithPassword, using demo fallback:', err);
+          return mockAuth.signInWithPassword(args);
+        }
+      },
+      getUser: async () => {
+        try {
+          const res = await realClient.auth.getUser();
+          if (res.error || !res.data.user) return mockAuth.getUser();
+          return res;
+        } catch {
+          return mockAuth.getUser();
+        }
+      },
+      getSession: async () => {
+        try {
+          const res = await realClient.auth.getSession();
+          if (res.error || !res.data.session) return mockAuth.getSession();
+          return res;
+        } catch {
+          return mockAuth.getSession();
+        }
+      }
+    }
+  } as any;
 }
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(_, prop, receiver) {
     if (!_supabase) _supabase = createSupabaseClient();

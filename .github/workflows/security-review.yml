@@ -1,4 +1,4 @@
-name: Backend DevSecOps Security & Dependency Review
+name: DevSecOps Security & Dependency Review
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   security-audit:
-    name: Backend Security Review & SAST/DAST Pipeline
+    name: DevSecOps Security Review & SAST/DAST Pipeline
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -19,8 +19,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Detect Framework & Install Backend Dependencies
+      - name: Install Frontend Dependencies
+        run: npm install
+
+      - name: Detect & Install Backend Dependencies
         run: |
           if [ -d "Backend" ]; then
             cd Backend
@@ -34,24 +38,32 @@ jobs:
         continue-on-error: true
 
       - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'fs'
           ignore-unfixed: true
           format: 'table'
         continue-on-error: true
 
-      - name: Run Backend Unit & Security Checks
+      - name: Run Code Checks & Build Verification
         run: |
+          npx tsc --noEmit
+          npm run lint
+          npm run build
           if [ -d "Backend" ]; then
             cd Backend
-            npm run lint || true
+            npm run build || true
           fi
+
+      - name: Ensure Findings Directory Exists
+        run: |
+          mkdir -p "Vulnerability Test Results"
 
       - name: Upload Security Findings & Inventories
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: backend-security-assessment-results
+          name: security-assessment-results
           path: Vulnerability Test Results/
+          if-no-files-found: ignore
           retention-days: 30

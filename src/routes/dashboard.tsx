@@ -4,6 +4,7 @@ import { Screen } from "@/components/mobile/Screen";
 import { Card, StatChip } from "@/components/mobile/Card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getApiUrl } from "@/utils/api";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — MediCare AI" }] }),
@@ -31,7 +32,36 @@ function Page() {
       setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
     }
 
-    supabase.auth.getUser().then(({ data }) => {
+    const loadMeds = async (userId?: string) => {
+      if (userId) {
+        try {
+          const res = await fetch(getApiUrl(`/api/medicines?user_id=${userId}`));
+          if (res.ok) {
+            const data = await res.json();
+            setMedicines(data);
+            localStorage.setItem('medicines', JSON.stringify(data));
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to load medicines from backend API:", err);
+        }
+      }
+
+      // Fallback to localStorage
+      const saved = localStorage.getItem('medicines');
+      if (saved) {
+        try {
+          setMedicines(JSON.parse(saved));
+        } catch (e) {
+          setMedicines(defaultMeds);
+        }
+      } else {
+        setMedicines(defaultMeds);
+        localStorage.setItem('medicines', JSON.stringify(defaultMeds));
+      }
+    };
+
+    supabase.auth.getUser().then(({ data }: any) => {
       if (data?.user) {
         if (data.user.user_metadata?.name) {
           setUserName(data.user.user_metadata.name);
@@ -39,19 +69,11 @@ function Page() {
           const emailName = data.user.email.split('@')[0];
           setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
         }
+        loadMeds(data.user.id);
+      } else {
+        loadMeds();
       }
     });
-
-    const saved = localStorage.getItem('medicines');
-    if (saved) {
-      try {
-        setMedicines(JSON.parse(saved));
-      } catch (e) {
-        setMedicines(defaultMeds);
-      }
-    } else {
-      setMedicines(defaultMeds);
-    }
   }, []);
 
   return (
@@ -73,9 +95,9 @@ function Page() {
           </Link>
         </div>
 
-        <Link to="/search-symptoms" className="mt-5 flex h-12 items-center gap-3 rounded-2xl bg-card px-4 shadow-[var(--shadow-soft)]">
+        <Link to="/chat" className="mt-5 flex h-12 items-center gap-3 rounded-2xl bg-card px-4 shadow-[var(--shadow-soft)]">
           <Search className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Search symptoms, medicines…</span>
+          <span className="text-sm text-muted-foreground">Search symptoms, ask Aura AI...</span>
         </Link>
 
         <button
@@ -104,7 +126,7 @@ function Page() {
         <div className="mt-5 grid grid-cols-2 gap-3">
           <ActionCard to="/diseases" icon={<Stethoscope className="h-5 w-5" />} title="My Conditions" sub="Manage diseases" />
           <ActionCard to="/medicine-overview" icon={<Pill className="h-5 w-5" />} title="Medicines" sub={`${medicines.length} today`} />
-          <ActionCard to="/daily-plan" icon={<Sparkles className="h-5 w-5" />} title="Daily Plan" sub="AI guided" />
+          <ActionCard to="/chat" icon={<Sparkles className="h-5 w-5" />} title="AI Chatbot" sub="Ask Aura health tips" />
           <ActionCard to="/calendar" icon={<Calendar className="h-5 w-5" />} title="Calendar" sub="View schedule" />
         </div>
 

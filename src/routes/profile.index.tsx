@@ -21,7 +21,7 @@ function Page() {
       setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
     }
 
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }: any) => {
       if (data?.user) {
         setUserEmail(data.user.email || "");
         if (data.user.user_metadata?.name) {

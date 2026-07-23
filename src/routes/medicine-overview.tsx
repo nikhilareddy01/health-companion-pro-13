@@ -3,6 +3,7 @@ import { Plus, Pill, Sun, Moon, Sunset, Check, X, RefreshCw } from "lucide-react
 import { Screen } from "@/components/mobile/Screen";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { getApiUrl } from "@/utils/api";
 
 export const Route = createFileRoute("/medicine-overview")({ component: Page });
 
@@ -22,46 +23,96 @@ const iconMap: Record<string, any> = {
 function Page() {
   const navigate = useNavigate();
   const [medicines, setMedicines] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('medicines');
-    if (saved) {
-      try {
-        setMedicines(JSON.parse(saved));
-      } catch (e) {
+    const loadMeds = async (uid?: string) => {
+      if (uid) {
+        try {
+          const res = await fetch(getApiUrl(`/api/medicines?user_id=${uid}`));
+          if (res.ok) {
+            const data = await res.json();
+            setMedicines(data);
+            localStorage.setItem('medicines', JSON.stringify(data));
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to load medicines from backend:", err);
+        }
+      }
+      
+      const saved = localStorage.getItem('medicines');
+      if (saved) {
+        try {
+          setMedicines(JSON.parse(saved));
+        } catch (e) {
+          setMedicines(defaultMeds);
+          localStorage.setItem('medicines', JSON.stringify(defaultMeds));
+        }
+      } else {
         setMedicines(defaultMeds);
         localStorage.setItem('medicines', JSON.stringify(defaultMeds));
       }
-    } else {
-      setMedicines(defaultMeds);
-      localStorage.setItem('medicines', JSON.stringify(defaultMeds));
-    }
+    };
+
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.auth.getUser().then(({ data }: { data: any }) => {
+        if (data?.user) {
+          setUserId(data.user.id);
+          loadMeds(data.user.id);
+        } else {
+          loadMeds();
+        }
+      });
+    });
   }, []);
 
-  const handleTake = (id: string, e: React.MouseEvent) => {
+  const updateMedicineOnBackend = async (id: string, updates: any) => {
+    // Check if it's a numeric temp ID generated locally.
+    // If it's a UUID, we can update it on the backend.
+    if (userId && isNaN(Number(id))) {
+      try {
+        await fetch(getApiUrl(`/api/medicines/${id}`), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        });
+      } catch (err) {
+        console.error("Failed to sync medicine update with backend:", err);
+      }
+    }
+  };
+
+  const handleTake = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const updated = medicines.map((m) => m.id === id ? { ...m, taken: true, skipped: false } : m);
+    const updates = { taken: true, skipped: false };
+    const updated = medicines.map((m) => m.id === id ? { ...m, ...updates } : m);
     setMedicines(updated);
     localStorage.setItem('medicines', JSON.stringify(updated));
     toast.success("Medicine marked as taken!");
+    await updateMedicineOnBackend(id, updates);
   };
 
-  const handleSkip = (id: string, e: React.MouseEvent) => {
+  const handleSkip = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const updated = medicines.map((m) => m.id === id ? { ...m, taken: false, skipped: true } : m);
+    const updates = { taken: false, skipped: true };
+    const updated = medicines.map((m) => m.id === id ? { ...m, ...updates } : m);
     setMedicines(updated);
     localStorage.setItem('medicines', JSON.stringify(updated));
     toast.error("Medicine marked as skipped");
+    await updateMedicineOnBackend(id, updates);
   };
 
-  const handleReset = (id: string, e: React.MouseEvent) => {
+  const handleReset = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const updated = medicines.map((m) => m.id === id ? { ...m, taken: false, skipped: false } : m);
+    const updates = { taken: false, skipped: false };
+    const updated = medicines.map((m) => m.id === id ? { ...m, ...updates } : m);
     setMedicines(updated);
     localStorage.setItem('medicines', JSON.stringify(updated));
+    await updateMedicineOnBackend(id, updates);
   };
 
   const todayCount = medicines.length;
