@@ -3,8 +3,8 @@
   "appName": "Aura Health Companion",
   "webDir": "dist/client",
   "server": {
-    "url": "https://nikhilareddy01.github.io/health-companion-pro-13/",
+    "url": "http://10.47.68.117:8081",
     "cleartext": true,
-    "androidScheme": "https"
+    "androidScheme": "http"
   }
 }
