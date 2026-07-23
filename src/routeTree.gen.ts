@@ -58,6 +58,7 @@ import { Route as MedicineEmergencyRouteImport } from './routes/medicine.emergen
 import { Route as MedicineAddRouteImport } from './routes/medicine.add'
 import { Route as DietWaterRouteImport } from './routes/diet.water'
 import { Route as DietTriggerRouteImport } from './routes/diet.trigger'
+import { Route as DietSnackRouteImport } from './routes/diet.snack'
 import { Route as DietNutritionRouteImport } from './routes/diet.nutrition'
 import { Route as DietMealPlanRouteImport } from './routes/diet.meal-plan'
 import { Route as DietLunchRouteImport } from './routes/diet.lunch'
@@ -311,6 +312,11 @@ const DietTriggerRoute = DietTriggerRouteImport.update({
   path: '/diet/trigger',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DietSnackRoute = DietSnackRouteImport.update({
+  id: '/diet/snack',
+  path: '/diet/snack',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DietNutritionRoute = DietNutritionRouteImport.update({
   id: '/diet/nutrition',
   path: '/diet/nutrition',
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/diet/lunch': typeof DietLunchRoute
   '/diet/meal-plan': typeof DietMealPlanRoute
   '/diet/nutrition': typeof DietNutritionRoute
+  '/diet/snack': typeof DietSnackRoute
   '/diet/trigger': typeof DietTriggerRoute
   '/diet/water': typeof DietWaterRoute
   '/medicine/add': typeof MedicineAddRoute
@@ -434,6 +441,7 @@ export interface FileRoutesByTo {
   '/diet/lunch': typeof DietLunchRoute
   '/diet/meal-plan': typeof DietMealPlanRoute
   '/diet/nutrition': typeof DietNutritionRoute
+  '/diet/snack': typeof DietSnackRoute
   '/diet/trigger': typeof DietTriggerRoute
   '/diet/water': typeof DietWaterRoute
   '/medicine/add': typeof MedicineAddRoute
@@ -493,6 +501,7 @@ export interface FileRoutesById {
   '/diet/lunch': typeof DietLunchRoute
   '/diet/meal-plan': typeof DietMealPlanRoute
   '/diet/nutrition': typeof DietNutritionRoute
+  '/diet/snack': typeof DietSnackRoute
   '/diet/trigger': typeof DietTriggerRoute
   '/diet/water': typeof DietWaterRoute
   '/medicine/add': typeof MedicineAddRoute
@@ -553,6 +562,7 @@ export interface FileRouteTypes {
     | '/diet/lunch'
     | '/diet/meal-plan'
     | '/diet/nutrition'
+    | '/diet/snack'
     | '/diet/trigger'
     | '/diet/water'
     | '/medicine/add'
@@ -611,6 +621,7 @@ export interface FileRouteTypes {
     | '/diet/lunch'
     | '/diet/meal-plan'
     | '/diet/nutrition'
+    | '/diet/snack'
     | '/diet/trigger'
     | '/diet/water'
     | '/medicine/add'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/diet/lunch'
     | '/diet/meal-plan'
     | '/diet/nutrition'
+    | '/diet/snack'
     | '/diet/trigger'
     | '/diet/water'
     | '/medicine/add'
@@ -728,6 +740,7 @@ export interface RootRouteChildren {
   DietLunchRoute: typeof DietLunchRoute
   DietMealPlanRoute: typeof DietMealPlanRoute
   DietNutritionRoute: typeof DietNutritionRoute
+  DietSnackRoute: typeof DietSnackRoute
   DietTriggerRoute: typeof DietTriggerRoute
   DietWaterRoute: typeof DietWaterRoute
   MedicineAddRoute: typeof MedicineAddRoute
@@ -1103,6 +1116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DietTriggerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/diet/snack': {
+      id: '/diet/snack'
+      path: '/diet/snack'
+      fullPath: '/diet/snack'
+      preLoaderRoute: typeof DietSnackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/diet/nutrition': {
       id: '/diet/nutrition'
       path: '/diet/nutrition'
@@ -1184,6 +1204,7 @@ const rootRouteChildren: RootRouteChildren = {
   DietLunchRoute: DietLunchRoute,
   DietMealPlanRoute: DietMealPlanRoute,
   DietNutritionRoute: DietNutritionRoute,
+  DietSnackRoute: DietSnackRoute,
   DietTriggerRoute: DietTriggerRoute,
   DietWaterRoute: DietWaterRoute,
   MedicineAddRoute: MedicineAddRoute,

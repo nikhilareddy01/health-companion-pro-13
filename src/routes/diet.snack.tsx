@@ -1,17 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Screen } from "@/components/mobile/Screen";
-import { Coffee, CheckCircle2, Circle, Utensils } from "lucide-react";
+import { Apple, CheckCircle2, Circle, Utensils } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getDietData, setMealSelection, DailyDietData } from "@/utils/dietStorage";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/diet/breakfast")({ component: Page });
+export const Route = createFileRoute("/diet/snack")({ component: Page });
 
 const suggestions = [
-  { t: "Oats with berries & nuts", k: "320 kcal", g: "Low GI · High fiber" },
-  { t: "Veggie omelette", k: "280 kcal", g: "High protein" },
-  { t: "Greek yogurt + chia", k: "240 kcal", g: "Probiotic boost" },
+  { t: "Almonds & walnuts", k: "180 kcal", g: "Healthy fats · Brain food" },
+  { t: "Apple slices with peanut butter", k: "200 kcal", g: "Fiber & protein energy" },
+  { t: "Carrot sticks & hummus", k: "150 kcal", g: "Low calorie · Crunchy" },
 ];
 
 function Page() {
@@ -27,13 +27,13 @@ function Page() {
     });
   }, []);
 
-  const currentBreakfast = dietData.breakfast;
-  const selectedItemTitle = currentBreakfast?.selectedItem || "";
-  const isEaten = currentBreakfast?.isEaten || false;
+  const currentSnack = dietData.snack;
+  const selectedItemTitle = currentSnack?.selectedItem || "";
+  const isEaten = currentSnack?.isEaten || false;
 
   const handleSelectMeal = (item: { t: string; k: string; g: string }, markEaten?: boolean) => {
     const updated = setMealSelection(
-      "breakfast",
+      "snack",
       { title: item.t, calories: item.k, tags: item.g },
       markEaten !== undefined ? markEaten : isEaten,
       userId
@@ -41,44 +41,43 @@ function Page() {
     setDietData(updated);
 
     if (markEaten) {
-      toast.success(`Selected "${item.t}" & marked as Eaten! 🥗`);
+      toast.success(`Selected "${item.t}" & marked as Eaten! 🍎`);
     } else {
-      toast.success(`Selected "${item.t}" for Breakfast!`);
+      toast.success(`Selected "${item.t}" for Snack!`);
     }
   };
 
   const toggleEaten = () => {
     if (!selectedItemTitle) {
-      // Default to first item if none selected yet
       handleSelectMeal(suggestions[0], true);
       return;
     }
     const targetItem = suggestions.find((s) => s.t === selectedItemTitle) || {
       t: selectedItemTitle,
-      k: currentBreakfast?.calories || "320 kcal",
-      g: currentBreakfast?.tags || "Low GI",
+      k: currentSnack?.calories || "180 kcal",
+      g: currentSnack?.tags || "Healthy fats",
     };
     handleSelectMeal(targetItem, !isEaten);
   };
 
   return (
-    <Screen title="Breakfast" contentClass="px-5 pb-8">
+    <Screen title="Snack" contentClass="px-5 pb-8">
       {/* Icon Header */}
-      <div className="flex h-32 items-center justify-center rounded-3xl bg-[oklch(0.96_0.05_75)] shadow-[var(--shadow-soft)]">
-        <Coffee className="h-14 w-14 text-[oklch(0.55_0.12_75)]" />
+      <div className="flex h-32 items-center justify-center rounded-3xl bg-secondary-soft shadow-[var(--shadow-soft)]">
+        <Apple className="h-14 w-14 text-secondary" />
       </div>
 
       {/* Active Selection Banner */}
-      <div className="mt-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)] border border-primary/20">
+      <div className="mt-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)] border border-secondary/20">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">Your Breakfast Choice</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-secondary">Your Snack Choice</p>
             <p className="text-base font-bold text-foreground mt-1">
-              {selectedItemTitle || "No meal selected yet"}
+              {selectedItemTitle || "No snack selected yet"}
             </p>
-            {currentBreakfast?.calories && (
+            {currentSnack?.calories && (
               <p className="text-xs text-muted-foreground mt-0.5">
-                {currentBreakfast.calories} · {currentBreakfast.tags}
+                {currentSnack.calories} · {currentSnack.tags}
               </p>
             )}
           </div>
@@ -87,7 +86,7 @@ function Page() {
             className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold shadow-sm transition-all ${
               isEaten
                 ? "bg-emerald-500 text-white"
-                : "bg-muted text-foreground hover:bg-primary-soft hover:text-primary"
+                : "bg-muted text-foreground hover:bg-secondary-soft hover:text-secondary"
             }`}
           >
             {isEaten ? (
@@ -116,7 +115,7 @@ function Page() {
               onClick={() => handleSelectMeal(item)}
               className={`group cursor-pointer rounded-2xl p-4 transition-all shadow-[var(--shadow-soft)] ${
                 isSelected
-                  ? "bg-primary-soft/40 border-2 border-primary"
+                  ? "bg-secondary-soft/40 border-2 border-secondary"
                   : "bg-card hover:border hover:border-muted"
               }`}
             >
@@ -125,7 +124,7 @@ function Page() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-foreground">{item.t}</p>
                     {isSelected && (
-                      <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
+                      <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground">
                         Selected
                       </span>
                     )}
@@ -144,8 +143,8 @@ function Page() {
                       isSelected && isEaten
                         ? "bg-emerald-500 text-white"
                         : isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground hover:bg-primary hover:text-primary-foreground"
+                        ? "bg-secondary text-secondary-foreground"
+                        : "bg-muted text-foreground hover:bg-secondary hover:text-secondary-foreground"
                     }`}
                   >
                     {isSelected && isEaten ? "Eaten ✓" : isSelected ? "Selected" : "Select"}
@@ -160,7 +159,7 @@ function Page() {
       {/* Done Button */}
       <button
         onClick={() => navigate({ to: "/diet" })}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-md hover:opacity-90 active:scale-98 transition-all"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary py-3.5 text-sm font-semibold text-secondary-foreground shadow-md hover:opacity-90 active:scale-98 transition-all"
       >
         <Utensils className="h-4 w-4" /> Save & Back to Meals Today
       </button>

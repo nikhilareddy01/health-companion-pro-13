@@ -70,8 +70,10 @@ export function Page() {
   // Recommended Meals State
   const [eatenMeals, setEatenMeals] = useState<Record<string, boolean>>({});
 
+  const getTodayStr = () => new Date().toISOString().split("T")[0];
+
   useEffect(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = getTodayStr();
     supabase.auth.getUser().then(({ data }: any) => {
       const uid = data?.user?.id || null;
       setUserId(uid);
@@ -165,14 +167,14 @@ export function Page() {
     const nextAmount = waterIntakeMl + amountMl;
     setWaterIntakeMl(nextAmount);
     const userKey = userId || "guest";
-    localStorage.setItem(`water_intake_${userKey}_${todayStr}`, nextAmount.toString());
+    localStorage.setItem(`water_intake_${userKey}_${getTodayStr()}`, nextAmount.toString());
     toast.success(`Logged ${amountMl} ml water! (${nextAmount} ml total today)`);
   };
 
   const resetWater = () => {
     setWaterIntakeMl(0);
     const userKey = userId || "guest";
-    localStorage.setItem(`water_intake_${userKey}_${todayStr}`, "0");
+    localStorage.setItem(`water_intake_${userKey}_${getTodayStr()}`, "0");
     toast.info("Water intake reset for today");
   };
 
@@ -181,7 +183,7 @@ export function Page() {
     const nextState = { ...eatenMeals, [mealId]: !eatenMeals[mealId] };
     setEatenMeals(nextState);
     const userKey = userId || "guest";
-    localStorage.setItem(`eaten_meals_${userKey}_${todayStr}`, JSON.stringify(nextState));
+    localStorage.setItem(`eaten_meals_${userKey}_${getTodayStr()}`, JSON.stringify(nextState));
 
     if (nextState[mealId]) {
       toast.success(`Marked "${mealName}" as Eaten! 🥗`);
