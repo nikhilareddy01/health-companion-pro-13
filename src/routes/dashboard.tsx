@@ -1,12 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
-  Bell,
   Heart,
   Droplet,
   Activity,
   Footprints,
   Search,
-  Calendar,
   Pill,
   Stethoscope,
   Sparkles,
@@ -16,6 +14,7 @@ import {
   Utensils,
   Edit2,
   RotateCcw,
+  Circle,
 } from "lucide-react";
 import { Screen } from "@/components/mobile/Screen";
 import { useEffect, useState } from "react";
@@ -37,7 +36,7 @@ interface HealthMetrics {
 
 interface RecommendedMeal {
   id: string;
-  type: "Breakfast" | "Lunch" | "Dinner";
+  type: "Breakfast" | "Lunch" | "Snack" | "Dinner";
   name: string;
   calories: string;
 }
@@ -67,7 +66,7 @@ export function Page() {
   // Water Intake State
   const [waterIntakeMl, setWaterIntakeMl] = useState<number>(0);
 
-  // Recommended Meals State
+  // Eaten Meals State
   const [eatenMeals, setEatenMeals] = useState<Record<string, boolean>>({});
 
   const getTodayStr = () => new Date().toISOString().split("T")[0];
@@ -157,28 +156,26 @@ export function Page() {
       } catch {
         setMedicines([]);
       }
-    } else {
-      setMedicines([]);
     }
   };
 
-  // Water Intake Actions
+  // Water Actions
   const addWater = (amountMl: number) => {
-    const nextAmount = waterIntakeMl + amountMl;
-    setWaterIntakeMl(nextAmount);
+    const nextVal = waterIntakeMl + amountMl;
+    setWaterIntakeMl(nextVal);
     const userKey = userId || "guest";
-    localStorage.setItem(`water_intake_${userKey}_${getTodayStr()}`, nextAmount.toString());
-    toast.success(`Logged ${amountMl} ml water! (${nextAmount} ml total today)`);
+    localStorage.setItem(`water_intake_${userKey}_${getTodayStr()}`, String(nextVal));
+    toast.success(`Added ${amountMl} ml of water! 💧`);
   };
 
   const resetWater = () => {
     setWaterIntakeMl(0);
     const userKey = userId || "guest";
     localStorage.setItem(`water_intake_${userKey}_${getTodayStr()}`, "0");
-    toast.info("Water intake reset for today");
+    toast.info("Water intake reset.");
   };
 
-  // Toggle Meal Eaten
+  // Toggle Meal Eaten / Uneaten
   const toggleMealEaten = (mealId: string, mealName: string) => {
     const nextState = { ...eatenMeals, [mealId]: !eatenMeals[mealId] };
     setEatenMeals(nextState);
@@ -188,7 +185,7 @@ export function Page() {
     if (nextState[mealId]) {
       toast.success(`Marked "${mealName}" as Eaten! 🥗`);
     } else {
-      toast.info(`Updated "${mealName}" status`);
+      toast.info(`Marked "${mealName}" as Uneaten 🍽️`);
     }
   };
 
@@ -204,19 +201,12 @@ export function Page() {
   return (
     <Screen noHeader bottomNav bgClass="bg-muted" contentClass="pb-6">
       <div className="px-5 pt-3">
-        {/* Header */}
+        {/* Header (Clean header without notification bell) */}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Good morning</p>
             <h1 className="text-xl font-bold text-foreground">{userName}</h1>
           </div>
-          <Link
-            to="/notifications"
-            className="relative flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-[var(--shadow-soft)]"
-          >
-            <Bell className="h-5 w-5 text-foreground" />
-            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive" />
-          </Link>
         </div>
 
         {/* Search */}
@@ -259,84 +249,109 @@ export function Page() {
           </button>
         </div>
 
-        {/* Dynamic Metrics Cards */}
-        {isEditingMetrics ? (
-          <div className="mt-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
-            <p className="text-xs font-semibold text-foreground mb-3">Record Your Vitals</p>
-            <div className="grid grid-cols-2 gap-3 text-xs">
+        {/* Dynamic Vitals Grid */}
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                <Heart className="h-4 w-4" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Heart rate</span>
+            </div>
+            <p className="mt-2 text-lg font-bold text-foreground">
+              {metrics.heartRate && metrics.heartRate !== "--" ? `${metrics.heartRate}` : "--"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
+                <Droplet className="h-4 w-4" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Blood sugar</span>
+            </div>
+            <p className="mt-2 text-lg font-bold text-foreground">
+              {metrics.bloodSugar && metrics.bloodSugar !== "--" ? `${metrics.bloodSugar}` : "--"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10 text-teal-500">
+                <Activity className="h-4 w-4" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Blood pressure</span>
+            </div>
+            <p className="mt-2 text-lg font-bold text-foreground">
+              {metrics.bloodPressure && metrics.bloodPressure !== "--/--" ? `${metrics.bloodPressure}` : "--"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+                <Footprints className="h-4 w-4" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Steps</span>
+            </div>
+            <p className="mt-2 text-lg font-bold text-foreground">
+              {metrics.steps && metrics.steps !== "--" ? `${metrics.steps}` : "--"}
+            </p>
+          </div>
+        </div>
+
+        {/* Inline Vitals Edit Form */}
+        {isEditingMetrics && (
+          <div className="mt-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)] border border-primary/20 space-y-3">
+            <p className="text-xs font-bold text-foreground">Update Today's Vitals</p>
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-muted-foreground">Heart Rate (bpm)</label>
+                <label className="text-[10px] text-muted-foreground">Heart Rate (bpm)</label>
                 <input
                   type="text"
-                  placeholder="e.g. 72 bpm"
-                  value={editMetrics.heartRate === "--" ? "" : editMetrics.heartRate}
+                  placeholder="e.g. 72"
+                  value={editMetrics.heartRate}
                   onChange={(e) => setEditMetrics({ ...editMetrics, heartRate: e.target.value })}
-                  className="mt-1 w-full rounded-xl bg-muted p-2 outline-none"
+                  className="mt-0.5 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="text-muted-foreground">Blood Sugar (mg/dL)</label>
+                <label className="text-[10px] text-muted-foreground">Blood Sugar (mg/dL)</label>
                 <input
                   type="text"
-                  placeholder="e.g. 98 mg/dL"
-                  value={editMetrics.bloodSugar === "--" ? "" : editMetrics.bloodSugar}
+                  placeholder="e.g. 100"
+                  value={editMetrics.bloodSugar}
                   onChange={(e) => setEditMetrics({ ...editMetrics, bloodSugar: e.target.value })}
-                  className="mt-1 w-full rounded-xl bg-muted p-2 outline-none"
+                  className="mt-0.5 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="text-muted-foreground">Blood Pressure</label>
+                <label className="text-[10px] text-muted-foreground">Blood Pressure</label>
                 <input
                   type="text"
                   placeholder="e.g. 120/80"
-                  value={editMetrics.bloodPressure === "--/--" ? "" : editMetrics.bloodPressure}
+                  value={editMetrics.bloodPressure}
                   onChange={(e) => setEditMetrics({ ...editMetrics, bloodPressure: e.target.value })}
-                  className="mt-1 w-full rounded-xl bg-muted p-2 outline-none"
+                  className="mt-0.5 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="text-muted-foreground">Steps</label>
+                <label className="text-[10px] text-muted-foreground">Steps</label>
                 <input
                   type="text"
-                  placeholder="e.g. 5,000"
-                  value={editMetrics.steps === "--" ? "" : editMetrics.steps}
+                  placeholder="e.g. 5000"
+                  value={editMetrics.steps}
                   onChange={(e) => setEditMetrics({ ...editMetrics, steps: e.target.value })}
-                  className="mt-1 w-full rounded-xl bg-muted p-2 outline-none"
+                  className="mt-0.5 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
             <button
               onClick={saveMetrics}
-              className="mt-4 w-full rounded-xl bg-primary py-2 text-xs font-semibold text-primary-foreground"
+              className="w-full rounded-xl bg-primary py-2 text-xs font-semibold text-primary-foreground shadow-sm"
             >
               Save Vitals
             </button>
-          </div>
-        ) : (
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <StatChip
-              icon={<Heart className="h-5 w-5" />}
-              label="Heart rate"
-              value={metrics.heartRate !== "--" ? metrics.heartRate : "--"}
-            />
-            <StatChip
-              icon={<Droplet className="h-5 w-5" />}
-              label="Blood sugar"
-              value={metrics.bloodSugar !== "--" ? metrics.bloodSugar : "--"}
-              tone="secondary"
-            />
-            <StatChip
-              icon={<Activity className="h-5 w-5 text-emerald-500" />}
-              label="Blood pressure"
-              value={metrics.bloodPressure !== "--/--" ? metrics.bloodPressure : "--/--"}
-              tone="success"
-            />
-            <StatChip
-              icon={<Footprints className="h-5 w-5 text-amber-500" />}
-              label="Steps"
-              value={metrics.steps !== "--" ? metrics.steps : "--"}
-              tone="warning"
-            />
           </div>
         )}
 
@@ -387,7 +402,7 @@ export function Page() {
 
         <div className="mt-3 space-y-2.5">
           {DEFAULT_RECOMMENDED_MEALS.map((meal) => {
-            const isEaten = eatenMeals[meal.id];
+            const isEaten = !!eatenMeals[meal.id];
             return (
               <div
                 key={meal.id}
@@ -410,16 +425,18 @@ export function Page() {
                   onClick={() => toggleMealEaten(meal.id, meal.name)}
                   className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                     isEaten
-                      ? "bg-emerald-500 text-white shadow-sm"
+                      ? "bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
                       : "bg-muted text-foreground hover:bg-primary-soft hover:text-primary"
                   }`}
                 >
                   {isEaten ? (
                     <>
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Eaten
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Eaten ✓
                     </>
                   ) : (
-                    "Mark as Eaten"
+                    <>
+                      <Circle className="h-3.5 w-3.5 text-muted-foreground" /> Mark as Eaten
+                    </>
                   )}
                 </button>
               </div>
@@ -439,155 +456,22 @@ export function Page() {
             to="/medicine-overview"
             icon={<Pill className="h-5 w-5" />}
             title="Medicines"
-            sub={medicines.length > 0 ? `${medicines.length} today` : "Add medicines"}
-          />
-          <ActionCard
-            to="/chat"
-            icon={<Sparkles className="h-5 w-5" />}
-            title="AI Chatbot"
-            sub="Ask Aura health tips"
-          />
-          <ActionCard
-            to="/calendar"
-            icon={<Calendar className="h-5 w-5" />}
-            title="Calendar"
-            sub="View schedule"
+            sub={medicines.length > 0 ? `${medicines.length} scheduled` : "Track prescriptions"}
           />
         </div>
-
-        {/* Upcoming Reminders / Medicines */}
-        <div className="mt-6 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Upcoming reminders</h2>
-          {medicines.length > 0 && (
-            <Link to="/medicine-overview" className="text-xs font-medium text-primary">
-              See all
-            </Link>
-          )}
-        </div>
-
-        <div className="mt-3 space-y-3">
-          {medicines.filter((m) => !m.taken && !m.skipped).length > 0 ? (
-            medicines
-              .filter((m) => !m.taken && !m.skipped)
-              .slice(0, 3)
-              .map((m) => (
-                <Link
-                  key={m.id}
-                  to="/medicine-overview"
-                  className="flex items-center gap-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]"
-                >
-                  <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-xl ${
-                      m.color === "primary"
-                        ? "bg-primary-soft text-primary"
-                        : "bg-secondary-soft text-secondary"
-                    }`}
-                  >
-                    <Pill className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">
-                      {m.name}{" "}
-                      <span className="font-normal text-muted-foreground">· {m.dose}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">1 tablet after meal</p>
-                  </div>
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    {m.time || "Scheduled"}
-                  </span>
-                </Link>
-              ))
-          ) : (
-            <div className="rounded-2xl border border-dashed border-muted bg-card p-6 text-center shadow-[var(--shadow-soft)]">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
-                <Pill className="h-6 w-6" />
-              </div>
-              <p className="mt-3 text-sm font-semibold text-foreground">No upcoming reminders</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                You haven't added any medicines or recommendations yet.
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <button
-                  onClick={() => navigate({ to: "/medicine/add" })}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Add Medicine
-                </button>
-                <button
-                  onClick={() => navigate({ to: "/ai-recommendation" })}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-input bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-primary" /> AI Recommendations
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Medical History & Summary */}
-        <Link
-          to="/medical-history"
-          className="mt-5 flex items-center justify-between rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]"
-        >
-          <div>
-            <p className="text-sm font-semibold text-foreground">Medical history</p>
-            <p className="text-xs text-muted-foreground">View past records & visits</p>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </Link>
-        <Link
-          to="/daily-summary"
-          className="mt-3 flex items-center justify-between rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]"
-        >
-          <div>
-            <p className="text-sm font-semibold text-foreground">Daily summary</p>
-            <p className="text-xs text-muted-foreground">Review yesterday's progress</p>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </Link>
       </div>
     </Screen>
   );
 }
 
-function StatChip({
-  icon,
-  label,
-  value,
-  tone = "primary",
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  tone?: "primary" | "secondary" | "warning" | "success";
-}) {
-  const tones: Record<string, string> = {
-    primary: "bg-primary-soft text-primary",
-    secondary: "bg-secondary-soft text-secondary",
-    warning: "bg-amber-500/10 text-amber-600",
-    success: "bg-emerald-500/10 text-emerald-600",
-  };
+function ActionCard({ to, icon, title, sub }: { to: string; icon: any; title: string; sub: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-soft)]">
-      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}>
-        {icon}
-      </div>
+    <Link to={to} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)] hover:border hover:border-primary/20 transition-all">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">{icon}</div>
       <div>
-        <div className="text-[11px] font-medium text-muted-foreground">{label}</div>
-        <div className="text-sm font-semibold text-foreground">{value}</div>
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="text-[11px] text-muted-foreground">{sub}</p>
       </div>
-    </div>
-  );
-}
-
-function ActionCard({ to, icon, title, sub }: { to: string; icon: React.ReactNode; title: string; sub: string }) {
-  return (
-    <Link to={to} className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
-        {icon}
-      </div>
-      <p className="mt-3 text-sm font-semibold text-foreground">{title}</p>
-      <p className="text-[11px] text-muted-foreground">{sub}</p>
     </Link>
   );
 }
