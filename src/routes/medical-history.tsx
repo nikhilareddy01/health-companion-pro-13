@@ -67,25 +67,34 @@ function Page() {
   const [prescribedMedicines, setPrescribedMedicines] = useState("");
 
   // Load from localStorage on mount
+  const [userId, setUserId] = useState<string | null>(null);
+
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("medical_history_records");
-      if (saved) {
-        setRecords(JSON.parse(saved));
-      } else {
-        setRecords(DEFAULT_RECORDS);
-        localStorage.setItem("medical_history_records", JSON.stringify(DEFAULT_RECORDS));
-      }
-    } catch {
-      setRecords(DEFAULT_RECORDS);
-    }
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.auth.getUser().then(({ data }: any) => {
+        const uid = data?.user?.id || null;
+        setUserId(uid);
+        const storageKey = uid ? `medical_history_records_${uid}` : "medical_history_records";
+        try {
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            setRecords(JSON.parse(saved));
+          } else {
+            setRecords([]);
+          }
+        } catch {
+          setRecords([]);
+        }
+      });
+    });
   }, []);
 
   // Save records helper
   const saveRecordsToStorage = (updated: MedicalRecord[]) => {
     setRecords(updated);
+    const storageKey = userId ? `medical_history_records_${userId}` : "medical_history_records";
     try {
-      localStorage.setItem("medical_history_records", JSON.stringify(updated));
+      localStorage.setItem(storageKey, JSON.stringify(updated));
     } catch (e) {
       console.error("Failed to save to localStorage:", e);
     }

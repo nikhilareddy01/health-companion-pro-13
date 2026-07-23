@@ -27,13 +27,14 @@ function Page() {
 
   useEffect(() => {
     const loadMeds = async (uid?: string) => {
+      const storageKey = uid ? `medicines_${uid}` : 'medicines';
       if (uid) {
         try {
           const res = await fetch(getApiUrl(`/api/medicines?user_id=${uid}`));
           if (res.ok) {
             const data = await res.json();
             setMedicines(data);
-            localStorage.setItem('medicines', JSON.stringify(data));
+            localStorage.setItem(storageKey, JSON.stringify(data));
             return;
           }
         } catch (err) {
@@ -41,17 +42,15 @@ function Page() {
         }
       }
       
-      const saved = localStorage.getItem('medicines');
+      const saved = localStorage.getItem(storageKey) || localStorage.getItem('medicines');
       if (saved) {
         try {
           setMedicines(JSON.parse(saved));
         } catch (e) {
-          setMedicines(defaultMeds);
-          localStorage.setItem('medicines', JSON.stringify(defaultMeds));
+          setMedicines([]);
         }
       } else {
-        setMedicines(defaultMeds);
-        localStorage.setItem('medicines', JSON.stringify(defaultMeds));
+        setMedicines([]);
       }
     };
 

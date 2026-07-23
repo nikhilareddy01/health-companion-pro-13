@@ -56,6 +56,30 @@ function createSupabaseClient() {
       }
       return { data: { session: null }, error: null };
     },
+    resetPasswordForEmail: async (email: string) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('reset_email', email);
+        const mockOtp = Math.floor(1000 + Math.random() * 9000).toString();
+        localStorage.setItem('reset_otp', mockOtp);
+        console.log(`[Supabase Auth] Password reset OTP for ${email}: ${mockOtp}`);
+      }
+      return { data: {}, error: null };
+    },
+    verifyOtp: async ({ email, token }: any) => {
+      if (typeof window !== 'undefined') {
+        const storedOtp = localStorage.getItem('reset_otp');
+        if (token && storedOtp && token.toString().trim() !== storedOtp) {
+          return { data: { session: null }, error: { message: "Invalid OTP verification code. Please check your email." } };
+        }
+      }
+      return { data: { session: { access_token: "demo-token" } }, error: null };
+    },
+    updateUser: async ({ password }: any) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('demo_password', password);
+      }
+      return { data: { user: {} }, error: null };
+    },
     onAuthStateChange: (callback: any) => {
       return { data: { subscription: { unsubscribe: () => {} } } };
     }

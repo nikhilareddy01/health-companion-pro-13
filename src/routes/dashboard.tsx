@@ -33,13 +33,14 @@ function Page() {
     }
 
     const loadMeds = async (userId?: string) => {
+      const storageKey = userId ? `medicines_${userId}` : 'medicines';
       if (userId) {
         try {
           const res = await fetch(getApiUrl(`/api/medicines?user_id=${userId}`));
           if (res.ok) {
             const data = await res.json();
             setMedicines(data);
-            localStorage.setItem('medicines', JSON.stringify(data));
+            localStorage.setItem(storageKey, JSON.stringify(data));
             return;
           }
         } catch (err) {
@@ -48,16 +49,15 @@ function Page() {
       }
 
       // Fallback to localStorage
-      const saved = localStorage.getItem('medicines');
+      const saved = localStorage.getItem(storageKey) || localStorage.getItem('medicines');
       if (saved) {
         try {
           setMedicines(JSON.parse(saved));
         } catch (e) {
-          setMedicines(defaultMeds);
+          setMedicines([]);
         }
       } else {
-        setMedicines(defaultMeds);
-        localStorage.setItem('medicines', JSON.stringify(defaultMeds));
+        setMedicines([]);
       }
     };
 
