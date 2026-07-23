@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Circle,
+  Edit3,
 } from "lucide-react";
 import { Screen } from "@/components/mobile/Screen";
 import { useEffect, useState } from "react";
@@ -20,6 +21,9 @@ import {
   toggleMealEatenStatus,
   DailyDietData,
   getDefaultMealName,
+  getDietTargets,
+  saveDietTargets,
+  DietTarget,
 } from "@/utils/dietStorage";
 import { toast } from "sonner";
 
@@ -29,14 +33,49 @@ export function Page() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [dietData, setDietData] = useState<DailyDietData>({});
+  const [targets, setTargets] = useState<DietTarget>({
+    calories: "1,800 kcal",
+    carbs: "180g",
+    protein: "110g",
+    fat: "55g",
+  });
+
+  // Target Editing State
+  const [isEditingTargets, setIsEditingTargets] = useState(false);
+  const [editCalories, setEditCalories] = useState("1,800 kcal");
+  const [editCarbs, setEditCarbs] = useState("180g");
+  const [editProtein, setEditProtein] = useState("110g");
+  const [editFat, setEditFat] = useState("55g");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }: any) => {
       const uid = data?.user?.id || null;
       setUserId(uid);
       setDietData(getDietData(uid));
+
+      const loadedTargets = getDietTargets(uid);
+      setTargets(loadedTargets);
+      setEditCalories(loadedTargets.calories);
+      setEditCarbs(loadedTargets.carbs);
+      setEditProtein(loadedTargets.protein);
+      setEditFat(loadedTargets.fat);
     });
   }, []);
+
+  const handleSaveTargets = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated: DietTarget = {
+      calories: editCalories.trim().includes("kcal") ? editCalories.trim() : `${editCalories.trim()} kcal`,
+      carbs: editCarbs.trim().endsWith("g") ? editCarbs.trim() : `${editCarbs.trim()}g`,
+      protein: editProtein.trim().endsWith("g") ? editProtein.trim() : `${editProtein.trim()}g`,
+      fat: editFat.trim().endsWith("g") ? editFat.trim() : `${editFat.trim()}g`,
+    };
+
+    setTargets(updated);
+    saveDietTargets(updated, userId);
+    setIsEditingTargets(false);
+    toast.success("Daily target macros updated successfully!");
+  };
 
   const handleToggleEaten = (
     e: React.MouseEvent,
@@ -69,24 +108,24 @@ export function Page() {
       to: "/diet/lunch",
       Icon: Salad,
       title: "Lunch",
-      tone: "success",
-      data: dietData.lunch,
-    },
-    {
-      type: "dinner" as const,
-      to: "/diet/dinner",
-      Icon: UtensilsCrossed,
-      title: "Dinner",
       tone: "primary",
-      data: dietData.dinner,
+      data: dietData.lunch,
     },
     {
       type: "snack" as const,
       to: "/diet/snack",
       Icon: Apple,
       title: "Snack",
-      tone: "secondary",
+      tone: "success",
       data: dietData.snack,
+    },
+    {
+      type: "dinner" as const,
+      to: "/diet/dinner",
+      Icon: UtensilsCrossed,
+      title: "Dinner",
+      tone: "secondary",
+      data: dietData.dinner,
     },
   ];
 
@@ -110,9 +149,81 @@ export function Page() {
           </span>
         </div>
         <p className="mt-3 text-xs opacity-90">AI MEAL PLAN</p>
-        <p className="text-lg font-bold">Diabetes-friendly · 1,800 kcal</p>
+        <p className="text-lg font-bold">Diabetes-friendly · {targets.calories}</p>
         <p className="mt-1 text-xs opacity-90">Tailored for your daily conditions</p>
       </Link>
+
+      {/* Daily Target Card with Edit Button */}
+      <div className="mt-4 rounded-3xl bg-card p-5 shadow-[var(--shadow-card)] border border-border/40">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground">DAILY TARGET</p>
+          <button
+            onClick={() => setIsEditingTargets(!isEditingTargets)}
+            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+          >
+            <Edit3 className="h-3.5 w-3.5" />
+            {isEditingTargets ? "Cancel Edit" : "Edit Targets"}
+          </button>
+        </div>
+
+        {isEditingTargets ? (
+          <form onSubmit={handleSaveTargets} className="mt-3 space-y-3">
+            <div>
+              <label className="text-[11px] font-medium text-muted-foreground">Daily Calories (kcal)</label>
+              <input
+                type="text"
+                value={editCalories}
+                onChange={(e) => setEditCalories(e.target.value)}
+                className="mt-1 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground">Carbs (g)</label>
+                <input
+                  type="text"
+                  value={editCarbs}
+                  onChange={(e) => setEditCarbs(e.target.value)}
+                  className="mt-1 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground">Protein (g)</label>
+                <input
+                  type="text"
+                  value={editProtein}
+                  onChange={(e) => setEditProtein(e.target.value)}
+                  className="mt-1 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground">Fat (g)</label>
+                <input
+                  type="text"
+                  value={editFat}
+                  onChange={(e) => setEditFat(e.target.value)}
+                  className="mt-1 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="mt-2 w-full rounded-xl bg-primary py-2 text-xs font-semibold text-primary-foreground shadow-sm"
+            >
+              Save Targets
+            </button>
+          </form>
+        ) : (
+          <>
+            <p className="mt-1 text-2xl font-bold text-foreground">{targets.calories}</p>
+            <div className="mt-4 grid grid-cols-3 gap-3 text-center text-xs font-bold">
+              <Macro label="Carbs" value={targets.carbs} tone="bg-primary-soft text-primary" />
+              <Macro label="Protein" value={targets.protein} tone="bg-secondary-soft text-secondary" />
+              <Macro label="Fat" value={targets.fat} tone="bg-[oklch(0.96_0.05_75)] text-[oklch(0.55_0.12_75)]" />
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Meals Today Section */}
       <div className="mt-6 flex items-center justify-between">
@@ -168,13 +279,13 @@ export function Page() {
                     onClick={(e) => handleToggleEaten(e, m.type, m.title)}
                     className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition-all ${
                       isEaten
-                        ? "bg-emerald-500 text-white"
-                        : "bg-muted text-foreground hover:bg-primary-soft hover:text-primary"
+                        ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                        : "bg-muted text-muted-foreground hover:bg-primary-soft hover:text-primary"
                     }`}
                   >
                     {isEaten ? (
                       <>
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Eaten
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Eaten ✓
                       </>
                     ) : (
                       <>
@@ -231,6 +342,15 @@ export function Page() {
         />
       </div>
     </Screen>
+  );
+}
+
+function Macro({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className={`rounded-xl ${tone} px-2 py-2`}>
+      <p className="font-bold text-sm">{value}</p>
+      <p className="text-[10px] opacity-80 uppercase font-semibold">{label}</p>
+    </div>
   );
 }
 

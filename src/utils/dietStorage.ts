@@ -12,6 +12,13 @@ export interface DailyDietData {
   snack?: MealChoice;
 }
 
+export interface DietTarget {
+  calories: string;
+  carbs: string;
+  protein: string;
+  fat: string;
+}
+
 export function getTodayDietKey(userId?: string | null): string {
   const todayStr = new Date().toISOString().split("T")[0];
   const userKey = userId || "guest";
@@ -36,6 +43,32 @@ export function saveDietData(data: DailyDietData, userId?: string | null): void 
   if (typeof window === "undefined") return;
   const key = getTodayDietKey(userId);
   localStorage.setItem(key, JSON.stringify(data));
+}
+
+export function getDietTargets(userId?: string | null): DietTarget {
+  const defaultTargets: DietTarget = {
+    calories: "1,800 kcal",
+    carbs: "180g",
+    protein: "110g",
+    fat: "55g",
+  };
+  if (typeof window === "undefined") return defaultTargets;
+  const userKey = userId || "guest";
+  const saved = localStorage.getItem(`diet_targets_${userKey}`);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return defaultTargets;
+    }
+  }
+  return defaultTargets;
+}
+
+export function saveDietTargets(targets: DietTarget, userId?: string | null): void {
+  if (typeof window === "undefined") return;
+  const userKey = userId || "guest";
+  localStorage.setItem(`diet_targets_${userKey}`, JSON.stringify(targets));
 }
 
 export function setMealSelection(
