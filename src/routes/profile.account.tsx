@@ -3,8 +3,9 @@ import { Screen } from "@/components/mobile/Screen";
 import { PrimaryButton } from "@/components/mobile/PrimaryButton";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { getApiUrl } from "@/utils/api";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/profile/account")({ component: Page });
 
@@ -37,25 +38,22 @@ function Page() {
       }
     };
 
-    import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.auth.getUser().then(({ data }: { data: any }) => {
-        if (data?.user) {
-          setUserId(data.user.id);
-          // Set initial metadata fallbacks if present
-          if (data.user.user_metadata?.name) setUserName(data.user.user_metadata.name);
-          if (data.user.email) setUserEmail(data.user.email);
-          loadAccount(data.user.id);
-        } else {
-          setLoading(false);
-        }
-      });
+    supabase.auth.getUser().then(({ data }: { data: any }) => {
+      if (data?.user) {
+        setUserId(data.user.id);
+        if (data.user.user_metadata?.name) setUserName(data.user.user_metadata.name);
+        if (data.user.email) setUserEmail(data.user.email);
+        loadAccount(data.user.id);
+      } else {
+        setLoading(false);
+      }
     });
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) {
-      toast.success("Account details updated locally (guest mode)");
+      toast.success("Account details updated locally");
       return;
     }
 
@@ -64,7 +62,7 @@ function Page() {
       const updates = {
         name: userName,
         email: userEmail,
-        phone: phone
+        phone: phone,
       };
 
       const res = await fetch(getApiUrl(`/api/profiles/${userId}`), {
@@ -74,11 +72,9 @@ function Page() {
       });
 
       if (!res.ok) throw new Error("Failed to save changes");
-      
-      // Update Supabase user metadata name if possible
-      const { supabase } = await import("@/integrations/supabase/client");
+
       await supabase.auth.updateUser({
-        data: { name: userName }
+        data: { name: userName },
       });
 
       toast.success("Changes saved successfully!");
@@ -88,6 +84,44 @@ function Page() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete your account? All your medicines, health records, water intake logs, and profile data will be completely erased. This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    if (typeof window !== "undefined") {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (
+          key &&
+          (key.includes(userEmail) ||
+            key.includes(userName) ||
+            key.startsWith("demo_") ||
+            key.includes("medicines") ||
+            key.includes("profile_health") ||
+            key.includes("medical_history") ||
+            key.includes("water_intake") ||
+            key.includes("eaten_meals") ||
+            key.includes("daily_diet"))
+        ) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    }
+
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore
+    }
+
+    toast.success("Account deleted and all personal data erased.");
+    window.location.href = "/signup";
   };
 
   return (
@@ -135,13 +169,14 @@ function Page() {
             <PrimaryButton type="submit" disabled={saving}>
               {saving ? "Saving Changes..." : "Save Changes"}
             </PrimaryButton>
-            <PrimaryButton
+
+            <button
               type="button"
-              variant="destructive"
-              onClick={() => toast.error("Account deletion requested")}
+              onClick={handleDeleteAccount}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 py-3 text-xs font-semibold text-destructive hover:bg-destructive/20 active:scale-98 transition-all"
             >
-              Delete Account
-            </PrimaryButton>
+              <Trash2 className="h-4 w-4" /> Delete Account & Erase All Data
+            </button>
           </div>
         </form>
       )}

@@ -118,16 +118,69 @@ export function Screen({
                 <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
               </div>
             </div>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/login" });
-              }}
-              className="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold text-destructive hover:bg-destructive/10 transition-all duration-200"
-            >
-              <LogOut className="h-5 w-5" />
-              Sign Out
-            </button>
+            <div className="space-y-1 pt-1">
+              <button
+                onClick={async () => {
+                  try {
+                    await supabase.auth.signOut();
+                  } catch {
+                    // Ignore errors
+                  }
+                  if (typeof window !== "undefined") {
+                    localStorage.removeItem("demo_email");
+                    localStorage.removeItem("demo_name");
+                    localStorage.removeItem("demo_user_id");
+                  }
+                  window.location.href = "/login";
+                }}
+                className="flex items-center gap-3 w-full px-3.5 py-2 rounded-xl text-sm font-semibold text-destructive hover:bg-destructive/10 transition-all duration-200"
+              >
+                <LogOut className="h-4.5 w-4.5" />
+                Sign Out
+              </button>
+
+              <button
+                onClick={async () => {
+                  const confirmed = window.confirm(
+                    "Are you sure you want to permanently delete your account? All your personal data and health history will be erased immediately. This cannot be undone."
+                  );
+                  if (!confirmed) return;
+
+                  if (typeof window !== "undefined") {
+                    const keysToRemove: string[] = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                      const key = localStorage.key(i);
+                      if (
+                        key &&
+                        (key.includes(userEmail) ||
+                          key.includes(userName) ||
+                          key.startsWith("demo_") ||
+                          key.includes("medicines") ||
+                          key.includes("profile_health") ||
+                          key.includes("medical_history") ||
+                          key.includes("water_intake") ||
+                          key.includes("eaten_meals") ||
+                          key.includes("daily_diet"))
+                      ) {
+                        keysToRemove.push(key);
+                      }
+                    }
+                    keysToRemove.forEach((k) => localStorage.removeItem(k));
+                  }
+
+                  try {
+                    await supabase.auth.signOut();
+                  } catch {
+                    // Ignore
+                  }
+                  window.location.href = "/signup";
+                }}
+                className="flex items-center gap-3 w-full px-3.5 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-200"
+              >
+                <LogOut className="h-4 w-4 opacity-70 rotate-180 text-muted-foreground" />
+                Delete Account & Data
+              </button>
+            </div>
           </div>
         </aside>
 

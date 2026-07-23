@@ -8,47 +8,56 @@ function createSupabaseClient() {
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
+  const getUserId = (email: string) => `user_${email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}`;
+
   const mockAuth = {
     signUp: async ({ email, password, options }: any) => {
       const name = options?.data?.name || email.split('@')[0];
+      const userId = getUserId(email);
       if (typeof window !== 'undefined') {
         localStorage.setItem('demo_name', name);
         localStorage.setItem('demo_email', email);
+        localStorage.setItem('demo_user_id', userId);
       }
-      return { data: { user: { id: 'demo-user-id', email, user_metadata: { name } } }, error: null };
+      return { data: { user: { id: userId, email, user_metadata: { name } } }, error: null };
     },
     signInWithPassword: async ({ email }: any) => {
+      const userId = getUserId(email);
       if (typeof window !== 'undefined') {
         localStorage.setItem('demo_email', email);
+        localStorage.setItem('demo_user_id', userId);
         if (!localStorage.getItem('demo_name')) {
           localStorage.setItem('demo_name', email.split('@')[0]);
         }
       }
-      return { data: { user: { id: 'demo-user-id', email, user_metadata: { name: email.split('@')[0] } } }, error: null };
+      return { data: { user: { id: userId, email, user_metadata: { name: email.split('@')[0] } } }, error: null };
     },
     signOut: async () => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('demo_email');
         localStorage.removeItem('demo_name');
+        localStorage.removeItem('demo_user_id');
       }
       return { error: null };
     },
     getUser: async () => {
       const email = typeof window !== 'undefined' ? localStorage.getItem('demo_email') : null;
       const name = typeof window !== 'undefined' ? localStorage.getItem('demo_name') : null;
-      if (email) {
-        return { data: { user: { id: 'demo-user-id', email, user_metadata: { name } } }, error: null };
+      const userId = typeof window !== 'undefined' ? localStorage.getItem('demo_user_id') : null;
+      if (email && userId) {
+        return { data: { user: { id: userId, email, user_metadata: { name } } }, error: null };
       }
       return { data: { user: null }, error: null };
     },
     getSession: async () => {
       const email = typeof window !== 'undefined' ? localStorage.getItem('demo_email') : null;
-      if (email) {
+      const userId = typeof window !== 'undefined' ? localStorage.getItem('demo_user_id') : null;
+      if (email && userId) {
         return {
           data: {
             session: {
               access_token: 'demo-session-token',
-              user: { id: 'demo-user-id', email }
+              user: { id: userId, email }
             }
           },
           error: null
