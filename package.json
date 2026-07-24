@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node -e \"require('fs').mkdirSync('dist/client', {recursive: true}); require('fs').copyFileSync('index.html', 'dist/client/index.html')\" && (npx cap copy android || true)",
+    "build": "vite build && node generate-html.js && (npx cap copy android || true)",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
