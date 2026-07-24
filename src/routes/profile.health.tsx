@@ -5,6 +5,7 @@ import { Edit3, Check, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { getApiUrl } from "@/utils/api";
+import { saveAndSync, pullUserCloud } from "@/utils/userSync";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/profile/health")({ component: Page });
@@ -99,8 +100,8 @@ function Page() {
       medicalNotes,
     };
 
-    // Save to LocalStorage immediately
-    localStorage.setItem(`profile_health_${userKey}`, JSON.stringify(updates));
+    // Save to LocalStorage immediately & sync to cloud
+    saveAndSync(`profile_health_${userKey}`, JSON.stringify(updates), userKey);
 
     if (!userId) {
       toast.success("Health details updated & saved!");

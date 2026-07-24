@@ -5,6 +5,7 @@ import { Screen } from "@/components/mobile/Screen";
 import { PrimaryButton } from "@/components/mobile/PrimaryButton";
 import { toast } from "sonner";
 import { getApiUrl } from "@/utils/api";
+import { saveAndSync } from "@/utils/userSync";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/profile/goals")({ component: Page });
@@ -74,8 +75,8 @@ function Page() {
       diet: dietGoal,
     };
 
-    // Save to LocalStorage
-    localStorage.setItem(`profile_goals_${userKey}`, JSON.stringify(goalsObj));
+    // Save to LocalStorage & Sync to Cloud
+    saveAndSync(`profile_goals_${userKey}`, JSON.stringify(goalsObj), userKey);
 
     if (!userId) {
       setSavedModal(true);

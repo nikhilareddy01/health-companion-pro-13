@@ -1,3 +1,5 @@
+import { saveAndSync } from "./userSync";
+
 export interface MealChoice {
   selectedItem: string;
   calories: string;
@@ -42,7 +44,8 @@ export function getDietData(userId?: string | null): DailyDietData {
 export function saveDietData(data: DailyDietData, userId?: string | null): void {
   if (typeof window === "undefined") return;
   const key = getTodayDietKey(userId);
-  localStorage.setItem(key, JSON.stringify(data));
+  const userKey = userId || "guest";
+  saveAndSync(key, JSON.stringify(data), userKey);
 }
 
 export function getDietTargets(userId?: string | null): DietTarget {
@@ -68,7 +71,7 @@ export function getDietTargets(userId?: string | null): DietTarget {
 export function saveDietTargets(targets: DietTarget, userId?: string | null): void {
   if (typeof window === "undefined") return;
   const userKey = userId || "guest";
-  localStorage.setItem(`diet_targets_${userKey}`, JSON.stringify(targets));
+  saveAndSync(`diet_targets_${userKey}`, JSON.stringify(targets), userKey);
 }
 
 export function setMealSelection(

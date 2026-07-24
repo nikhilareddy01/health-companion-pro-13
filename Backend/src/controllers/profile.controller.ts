@@ -105,3 +105,42 @@ export const updateProfile = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const userDataStore: Record<string, Record<string, any>> = {};
+
+export const syncUserData = async (req: Request, res: Response) => {
+  try {
+    const { userId, dataKey, value, fullData } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+    if (!userDataStore[userId]) {
+      userDataStore[userId] = {};
+    }
+
+    if (fullData && typeof fullData === 'object') {
+      userDataStore[userId] = { ...userDataStore[userId], ...fullData };
+    }
+
+    if (dataKey) {
+      userDataStore[userId][dataKey] = value;
+    }
+
+    console.log(`[Backend Sync] UserData updated for ${userId}:`, Object.keys(userDataStore[userId]));
+    res.status(200).json({ status: 'ok', data: userDataStore[userId] });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getUserData = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+    const userObj = userDataStore[userId] || {};
+    res.status(200).json({ status: 'ok', data: userObj });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

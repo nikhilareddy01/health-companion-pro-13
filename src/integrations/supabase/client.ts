@@ -4,6 +4,8 @@ import type { Database } from './types';
 
 import { getApiUrl } from '@/utils/api';
 
+import { pushUserCloud, pullUserCloud } from '@/utils/userSync';
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
@@ -20,6 +22,9 @@ function createSupabaseClient() {
         localStorage.setItem('demo_name', name);
         localStorage.setItem('demo_email', email);
         localStorage.setItem('demo_user_id', userId);
+        try {
+          await pushUserCloud(userId);
+        } catch { void 0; }
       }
       try {
         fetch(getApiUrl('/api/profiles/sync_account'), {
@@ -40,6 +45,9 @@ function createSupabaseClient() {
         if (!localStorage.getItem('demo_name')) {
           localStorage.setItem('demo_name', email.split('@')[0]);
         }
+        try {
+          await pullUserCloud(userId);
+        } catch { void 0; }
       }
       try {
         fetch(getApiUrl('/api/profiles/login_account'), {

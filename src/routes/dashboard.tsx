@@ -20,6 +20,7 @@ import { Screen } from "@/components/mobile/Screen";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getApiUrl } from "@/utils/api";
+import { pushUserCloud, pullUserCloud, saveAndSync } from "@/utils/userSync";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
@@ -73,9 +74,15 @@ export function Page() {
 
   useEffect(() => {
     const todayStr = getTodayStr();
-    supabase.auth.getUser().then(({ data }: any) => {
-      const uid = data?.user?.id || null;
+    
+    const initSyncAndLoad = async () => {
+      const { data }: any = await supabase.auth.getUser();
+      const uid = data?.user?.id || localStorage.getItem("demo_user_id") || null;
       setUserId(uid);
+
+      if (uid) {
+        await pullUserCloud(uid);
+      }
 
       if (data?.user) {
         if (data.user.user_metadata?.name) {
@@ -125,27 +132,34 @@ export function Page() {
             bloodPressure: parsed.bloodPressure || parsed.blood_pressure || "--/--",
             steps: parsed.steps || "--",
           });
+          setEditMetrics({
+            heartRate: parsed.heartRate || parsed.heart_rate || "72 bpm",
+            bloodSugar: parsed.bloodSugar || parsed.blood_sugar || "95 mg/dL",
+            bloodPressure: parsed.bloodPressure || parsed.blood_pressure || "120/80",
+            steps: parsed.steps || "5000",
+          });
         } catch {
-          // Keep defaults
+          // ignore
         }
       }
 
-      // 3. Load Water Intake
+      // 3. Load Water Intake & Eaten Meals for Today
       const savedWater = localStorage.getItem(`water_intake_${userKey}_${todayStr}`);
-      if (savedWater) {
-        setWaterIntakeMl(Number(savedWater) || 0);
+      if (savedWater !== null) {
+        setWaterIntakeMl(parseInt(savedWater, 10) || 0);
       }
 
-      // 4. Load Eaten Meals State
       const savedMeals = localStorage.getItem(`eaten_meals_${userKey}_${todayStr}`);
       if (savedMeals) {
         try {
           setEatenMeals(JSON.parse(savedMeals));
         } catch {
-          // Keep defaults
+          setEatenMeals({});
         }
       }
-    });
+    };
+
+    initSyncAndLoad();
   }, []);
 
   const loadLocalMeds = (key: string) => {
@@ -164,14 +178,14 @@ export function Page() {
     const nextVal = waterIntakeMl + amountMl;
     setWaterIntakeMl(nextVal);
     const userKey = userId || "guest";
-    localStorage.setItem(`water_intake_${userKey}_${getTodayStr()}`, String(nextVal));
+    saveAndSync(`water_intake_${userKey}_${getTodayStr()}`, String(nextVal), userKey);
     toast.success(`Added ${amountMl} ml of water! 💧`);
   };
 
   const resetWater = () => {
     setWaterIntakeMl(0);
     const userKey = userId || "guest";
-    localStorage.setItem(`water_intake_${userKey}_${getTodayStr()}`, "0");
+    saveAndSync(`water_intake_${userKey}_${getTodayStr()}`, "0", userKey);
     toast.info("Water intake reset.");
   };
 
@@ -182,7 +196,7 @@ export function Page() {
     const nextState = { ...eatenMeals, [mealId]: true };
     setEatenMeals(nextState);
     const userKey = userId || "guest";
-    localStorage.setItem(`eaten_meals_${userKey}_${getTodayStr()}`, JSON.stringify(nextState));
+    saveAndSync(`eaten_meals_${userKey}_${getTodayStr()}`, JSON.stringify(nextState), userKey);
     toast.success(`Marked "${mealName}" as Eaten! 🥗`);
   };
 
@@ -191,7 +205,7 @@ export function Page() {
     setMetrics(editMetrics);
     setIsEditingMetrics(false);
     const userKey = userId || "guest";
-    localStorage.setItem(`profile_health_${userKey}`, JSON.stringify(editMetrics));
+    saveAndSync(`profile_health_${userKey}`, JSON.stringify(editMetrics), userKey);
     toast.success("Today's health overview updated!");
   };
 
