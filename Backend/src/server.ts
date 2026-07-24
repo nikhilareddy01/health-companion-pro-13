@@ -31,6 +31,16 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
+});
+
+server.on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`[server]: Backend server is ALREADY active & running at http://localhost:${port}`);
+    process.exit(0);
+  } else {
+    console.error('[server]: Backend server startup error:', err);
+    process.exit(1);
+  }
 });
