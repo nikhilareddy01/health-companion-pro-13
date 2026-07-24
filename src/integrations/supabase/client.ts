@@ -2,6 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+import { getApiUrl } from '@/utils/api';
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
@@ -19,9 +21,18 @@ function createSupabaseClient() {
         localStorage.setItem('demo_email', email);
         localStorage.setItem('demo_user_id', userId);
       }
+      try {
+        fetch(getApiUrl('/api/profiles/sync_account'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name, userId })
+        }).catch(() => { void 0; });
+      } catch {
+        void 0;
+      }
       return { data: { user: { id: userId, email, user_metadata: { name } } }, error: null };
     },
-    signInWithPassword: async ({ email }: any) => {
+    signInWithPassword: async ({ email, password }: any) => {
       const userId = getUserId(email);
       if (typeof window !== 'undefined') {
         localStorage.setItem('demo_email', email);
@@ -29,6 +40,15 @@ function createSupabaseClient() {
         if (!localStorage.getItem('demo_name')) {
           localStorage.setItem('demo_name', email.split('@')[0]);
         }
+      }
+      try {
+        fetch(getApiUrl('/api/profiles/login_account'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, userId })
+        }).catch(() => { void 0; });
+      } catch {
+        void 0;
       }
       return { data: { user: { id: userId, email, user_metadata: { name: email.split('@')[0] } } }, error: null };
     },

@@ -3,7 +3,7 @@
   "appName": "Aura Health Companion",
   "webDir": "dist/client",
   "server": {
-    "url": "http://10.47.68.117:8081",
+    "url": "http://10.203.51.141:8081",
     "cleartext": true,
     "androidScheme": "http"
   }

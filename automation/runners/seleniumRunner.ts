@@ -2,7 +2,7 @@ import { generateAllSeleniumTestCases, SeleniumTestCase } from '../resources/sel
 import { Logger } from '../utils/logger.js';
 import { HtmlReporter } from '../utils/htmlReporter.js';
 import { SummaryReporter } from '../utils/summaryReporter.js';
-import { excelReporter } from '../utils/excelReporter.js';
+import { ExcelReporter } from '../utils/excelReporter.js';
 import { seleniumConfig } from '../config/selenium.config.js';
 import { execSync } from 'child_process';
 import * as path from 'path';

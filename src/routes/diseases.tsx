@@ -1,8 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Check, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Screen } from "@/components/mobile/Screen";
-import { PrimaryButton } from "@/components/mobile/PrimaryButton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -22,7 +21,6 @@ const initialList = [
 ];
 
 function Page() {
-  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [conditionsList, setConditionsList] = useState<string[]>(initialList);
   const [selected, setSelected] = useState<string[]>([]);
@@ -189,12 +187,6 @@ function Page() {
             </button>
           );
         })}
-      </div>
-
-      <div className="mt-8">
-        <PrimaryButton onClick={() => navigate({ to: "/ai-recommendation" })}>
-          Continue to AI Recommendations
-        </PrimaryButton>
       </div>
     </Screen>
   );

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Phone, Mail, Edit2, Send, CheckCircle2, Copy, ExternalLink, X } from "lucide-react";
+import { AlertTriangle, Phone, MessageCircle, Edit2, Send, Copy, ExternalLink, X } from "lucide-react";
 import { Screen } from "@/components/mobile/Screen";
 import { PrimaryButton } from "@/components/mobile/PrimaryButton";
 import { useState, useEffect } from "react";
@@ -18,7 +18,7 @@ interface ContactInfo {
 const defaultContact: ContactInfo = {
   name: "Sarah",
   relation: "Family",
-  phone: "+1 (555) 019-2834",
+  phone: "9390449424",
   email: "sarah.emergency@gmail.com",
 };
 
@@ -27,7 +27,7 @@ function Page() {
   const [userName, setUserName] = useState("Patient");
   const [contact, setContact] = useState<ContactInfo>(defaultContact);
   const [isEditing, setIsEditing] = useState(false);
-  const [showMailModal, setShowMailModal] = useState(false);
+  const [showWaModal, setShowWaModal] = useState(false);
 
   // Edit form states
   const [editName, setEditName] = useState("");
@@ -75,15 +75,15 @@ function Page() {
 
   const handleSaveContact = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editName.trim() || !editPhone.trim() || !editEmail.trim()) {
-      toast.error("Please enter Name, Phone Number, and Emergency Email ID!");
+    if (!editName.trim() || !editPhone.trim()) {
+      toast.error("Please enter Name and Emergency Phone Number!");
       return;
     }
     const updated: ContactInfo = {
       name: editName.trim(),
       relation: editRelation.trim() || "Family",
       phone: editPhone.trim(),
-      email: editEmail.trim(),
+      email: editEmail.trim() || defaultContact.email,
     };
     setContact(updated);
 
@@ -93,47 +93,41 @@ function Page() {
     toast.success("Emergency contact details updated successfully!");
   };
 
-  const alertSubject = `URGENT EMERGENCY ALERT & REFILL REQUEST - ${userName}`;
   const alertBody =
-    `PATIENT IN DANGER EMERGENCY ALERT:\n\n` +
-    `Patient Name: ${userName}\n` +
-    `Emergency Status: URGENT MEDICATION REFILL REQUESTED\n` +
-    `Contact Phone: ${contact.phone}\n` +
-    `Emergency Contact: ${contact.name} (${contact.relation})\n` +
-    `Time: ${new Date().toLocaleString()}\n\n` +
+    `🚨 *URGENT EMERGENCY HEALTH ALERT & REFILL REQUEST*\n\n` +
+    `*Patient Name:* ${userName}\n` +
+    `*Status:* URGENT MEDICATION REFILL REQUESTED\n` +
+    `*Patient Contact:* ${contact.phone}\n` +
+    `*Emergency Contact:* ${contact.name} (${contact.relation})\n` +
+    `*Time:* ${new Date().toLocaleString()}\n\n` +
     `Please assist the patient immediately. A medication refill order has been placed.`;
 
-  const handleOrderRefillWithEmergencyAlert = () => {
-    if (!contact.email) {
-      toast.error("Please enter an Emergency Contact Email ID first!");
+  const getCleanWaPhone = (phone: string) => {
+    let cleaned = phone.replace(/[^0-9]/g, "");
+    if (cleaned.length === 10) {
+      cleaned = "91" + cleaned; // Default Indian format if 10 digits
+    }
+    return cleaned;
+  };
+
+  const triggerWhatsAppDispatch = () => {
+    if (!contact.phone) {
+      toast.error("Please enter an Emergency Contact WhatsApp Phone Number first!");
       startEditing();
       return;
     }
 
-    const mailtoUrl = `mailto:${contact.email}?subject=${encodeURIComponent(alertSubject)}&body=${encodeURIComponent(
-      alertBody
-    )}`;
-
-    try {
-      window.location.href = mailtoUrl;
-    } catch {
-      // Fallback
-    }
-
-    setShowMailModal(true);
-    toast.success(`🚨 Mandatory Emergency Alert Email Dispatched to ${contact.email}!`);
+    const cleanPhone = getCleanWaPhone(contact.phone);
+    const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(alertBody)}`;
+    
+    window.open(waUrl, "_blank");
+    setShowWaModal(true);
+    toast.success(`🚨 Real-time Emergency WhatsApp Alert Sent to ${contact.phone}!`);
   };
 
   const copyAlertText = () => {
-    navigator.clipboard.writeText(`To: ${contact.email}\nSubject: ${alertSubject}\n\n${alertBody}`);
-    toast.success("Emergency Alert text copied to clipboard!");
-  };
-
-  const openWebGmail = () => {
-    const webGmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-      contact.email
-    )}&su=${encodeURIComponent(alertSubject)}&body=${encodeURIComponent(alertBody)}`;
-    window.open(webGmailUrl, "_blank");
+    navigator.clipboard.writeText(`WhatsApp To: ${contact.phone}\n\n${alertBody}`);
+    toast.success("Emergency WhatsApp Alert message copied to clipboard!");
   };
 
   return (
@@ -176,26 +170,13 @@ function Page() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">Emergency Phone Number</label>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Emergency WhatsApp Phone Number</label>
             <input
               value={editPhone}
               onChange={(e) => setEditPhone(e.target.value)}
               className="h-11 w-full rounded-xl bg-muted px-4 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g. +1 (555) 019-2834"
+              placeholder="e.g. 9390449424"
               type="tel"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Emergency Contact Email ID (Mandatory Alert Mail)
-            </label>
-            <input
-              value={editEmail}
-              onChange={(e) => setEditEmail(e.target.value)}
-              className="h-11 w-full rounded-xl bg-muted px-4 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
-              placeholder="e.g. sarah.emergency@gmail.com"
-              type="email"
               required
             />
           </div>
@@ -223,12 +204,12 @@ function Page() {
               </div>
             </div>
 
-            {/* Email Contact info */}
+            {/* WhatsApp Contact info */}
             <div className="flex items-center gap-3 pt-2 border-t border-border/40">
-              <Mail className="h-4 w-4 text-muted-foreground" />
+              <MessageCircle className="h-4 w-4 text-emerald-500" />
               <div className="flex-1">
-                <p className="text-xs font-medium text-foreground">Emergency Alert Email</p>
-                <p className="text-xs text-primary font-semibold truncate">{contact.email}</p>
+                <p className="text-xs font-medium text-foreground">Emergency Alert WhatsApp Number</p>
+                <p className="text-xs text-emerald-600 font-semibold truncate">{contact.phone}</p>
               </div>
             </div>
           </div>
@@ -240,9 +221,9 @@ function Page() {
             <Edit2 className="h-3.5 w-3.5" /> Edit Emergency Contact Details
           </button>
 
-          {/* Mandatory Refill & Email Alert Button */}
-          <PrimaryButton variant="destructive" onClick={handleOrderRefillWithEmergencyAlert}>
-            <Send className="mr-2 h-4 w-4 inline" /> Order Refill & Send Mandatory Emergency Alert Email
+          {/* Mandatory Refill & WhatsApp Alert Button */}
+          <PrimaryButton variant="destructive" onClick={triggerWhatsAppDispatch}>
+            <Send className="mr-2 h-4 w-4 inline" /> Order Refill & Send Mandatory Emergency Alert WhatsApp Message
           </PrimaryButton>
 
           <PrimaryButton variant="outline" onClick={() => toast.info("Opening pharmacy locator...")}>
@@ -251,28 +232,28 @@ function Page() {
         </div>
       )}
 
-      {/* Emergency Email Dispatch Modal */}
-      {showMailModal && (
+      {/* Emergency WhatsApp Dispatch Modal */}
+      {showWaModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-5 animate-in fade-in duration-200">
           <div className="w-full max-w-md rounded-3xl bg-card p-6 shadow-2xl border border-destructive/30 space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-destructive font-bold text-base">
-                <AlertTriangle className="h-5 w-5" /> Emergency Mail Dispatched
+              <div className="flex items-center gap-2 text-emerald-600 font-bold text-base">
+                <MessageCircle className="h-5 w-5" /> Emergency WhatsApp Sent
               </div>
               <button
-                onClick={() => setShowMailModal(false)}
+                onClick={() => setShowWaModal(false)}
                 className="rounded-full p-1 text-muted-foreground hover:bg-muted"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="rounded-2xl bg-destructive/10 p-3.5 text-xs text-foreground space-y-1">
+            <div className="rounded-2xl bg-emerald-500/10 p-3.5 text-xs text-foreground space-y-1">
               <p>
-                <strong>To:</strong> {contact.email}
+                <strong>WhatsApp Number:</strong> {contact.phone}
               </p>
               <p>
-                <strong>Subject:</strong> {alertSubject}
+                <strong>Recipient:</strong> {contact.name} ({contact.relation})
               </p>
               <div className="mt-2 rounded-xl bg-background p-2.5 text-[11px] text-muted-foreground whitespace-pre-wrap font-mono">
                 {alertBody}
@@ -281,22 +262,22 @@ function Page() {
 
             <div className="space-y-2 pt-1">
               <button
-                onClick={openWebGmail}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-all"
+                onClick={triggerWhatsAppDispatch}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-all"
               >
-                <ExternalLink className="h-4 w-4" /> Send via Web Gmail / Email Client
+                <ExternalLink className="h-4 w-4" /> Re-open WhatsApp Message
               </button>
 
               <button
                 onClick={copyAlertText}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-muted py-2.5 text-xs font-semibold text-foreground hover:bg-muted/80 transition-all"
               >
-                <Copy className="h-4 w-4" /> Copy Alert Payload Text
+                <Copy className="h-4 w-4" /> Copy Message Text
               </button>
             </div>
 
             <p className="text-[10px] text-center text-muted-foreground">
-              Emergency email status: Dispatched. The refill order has been recorded.
+              Emergency WhatsApp status: Dispatched to {contact.phone}. Refill order recorded.
             </p>
           </div>
         </div>

@@ -6,7 +6,7 @@ export const getApiUrl = (path: string = "") => {
     // If we are running under Capacitor, redirect requests to the host PC's Wi-Fi IP address
     const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
     if (isCapacitor) {
-      host = '172.20.10.4';
+      host = '192.168.1.17';
     }
   }
   

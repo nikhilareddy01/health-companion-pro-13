@@ -175,18 +175,15 @@ export function Page() {
     toast.info("Water intake reset.");
   };
 
-  // Toggle Meal Eaten / Uneaten
-  const toggleMealEaten = (mealId: string, mealName: string) => {
-    const nextState = { ...eatenMeals, [mealId]: !eatenMeals[mealId] };
+  // Mark Meal as Eaten (Permanent - No Undo!)
+  const markMealEaten = (mealId: string, mealName: string) => {
+    if (eatenMeals[mealId]) return; // Once eaten, that's it! No undo!
+
+    const nextState = { ...eatenMeals, [mealId]: true };
     setEatenMeals(nextState);
     const userKey = userId || "guest";
     localStorage.setItem(`eaten_meals_${userKey}_${getTodayStr()}`, JSON.stringify(nextState));
-
-    if (nextState[mealId]) {
-      toast.success(`Marked "${mealName}" as Eaten! 🥗`);
-    } else {
-      toast.info(`Marked "${mealName}" as Uneaten 🍽️`);
-    }
+    toast.success(`Marked "${mealName}" as Eaten! 🥗`);
   };
 
   // Save Health Metrics
@@ -201,7 +198,7 @@ export function Page() {
   return (
     <Screen noHeader bottomNav bgClass="bg-muted" contentClass="pb-6">
       <div className="px-5 pt-3">
-        {/* Header (Clean header without notification bell) */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Good morning</p>
@@ -234,126 +231,7 @@ export function Page() {
           <ChevronRight className="h-5 w-5 opacity-80" />
         </button>
 
-        {/* Today's Overview Section */}
-        <div className="mt-7 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Today's overview</h2>
-          <button
-            onClick={() => {
-              setEditMetrics({ ...metrics });
-              setIsEditingMetrics(!isEditingMetrics);
-            }}
-            className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-            {isEditingMetrics ? "Cancel" : "Update Vitals"}
-          </button>
-        </div>
 
-        {/* Dynamic Vitals Grid */}
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
-                <Heart className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Heart rate</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-foreground">
-              {metrics.heartRate && metrics.heartRate !== "--" ? `${metrics.heartRate}` : "--"}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
-                <Droplet className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Blood sugar</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-foreground">
-              {metrics.bloodSugar && metrics.bloodSugar !== "--" ? `${metrics.bloodSugar}` : "--"}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10 text-teal-500">
-                <Activity className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Blood pressure</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-foreground">
-              {metrics.bloodPressure && metrics.bloodPressure !== "--/--" ? `${metrics.bloodPressure}` : "--"}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
-                <Footprints className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Steps</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-foreground">
-              {metrics.steps && metrics.steps !== "--" ? `${metrics.steps}` : "--"}
-            </p>
-          </div>
-        </div>
-
-        {/* Inline Vitals Edit Form */}
-        {isEditingMetrics && (
-          <div className="mt-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)] border border-primary/20 space-y-3">
-            <p className="text-xs font-bold text-foreground">Update Today's Vitals</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[10px] text-muted-foreground">Heart Rate (bpm)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 72"
-                  value={editMetrics.heartRate}
-                  onChange={(e) => setEditMetrics({ ...editMetrics, heartRate: e.target.value })}
-                  className="mt-0.5 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted-foreground">Blood Sugar (mg/dL)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 100"
-                  value={editMetrics.bloodSugar}
-                  onChange={(e) => setEditMetrics({ ...editMetrics, bloodSugar: e.target.value })}
-                  className="mt-0.5 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted-foreground">Blood Pressure</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 120/80"
-                  value={editMetrics.bloodPressure}
-                  onChange={(e) => setEditMetrics({ ...editMetrics, bloodPressure: e.target.value })}
-                  className="mt-0.5 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted-foreground">Steps</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 5000"
-                  value={editMetrics.steps}
-                  onChange={(e) => setEditMetrics({ ...editMetrics, steps: e.target.value })}
-                  className="mt-0.5 w-full rounded-xl bg-muted p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-            </div>
-            <button
-              onClick={saveMetrics}
-              className="w-full rounded-xl bg-primary py-2 text-xs font-semibold text-primary-foreground shadow-sm"
-            >
-              Save Vitals
-            </button>
-          </div>
-        )}
 
         {/* Water Taken Widget */}
         <div className="mt-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-soft)]">
@@ -422,10 +300,11 @@ export function Page() {
                   <p className="text-xs font-medium text-foreground mt-0.5">{meal.name}</p>
                 </div>
                 <button
-                  onClick={() => toggleMealEaten(meal.id, meal.name)}
+                  disabled={isEaten}
+                  onClick={() => markMealEaten(meal.id, meal.name)}
                   className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
                     isEaten
-                      ? "bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+                      ? "bg-emerald-500 text-white shadow-sm cursor-default opacity-95"
                       : "bg-muted text-foreground hover:bg-primary-soft hover:text-primary"
                   }`}
                 >

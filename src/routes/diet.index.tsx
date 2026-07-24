@@ -18,9 +18,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getDietData,
-  toggleMealEatenStatus,
+  setMealSelection,
   DailyDietData,
   getDefaultMealName,
+  getDefaultMealCalories,
   getDietTargets,
   saveDietTargets,
   DietTarget,
@@ -77,21 +78,28 @@ export function Page() {
     toast.success("Daily target macros updated successfully!");
   };
 
-  const handleToggleEaten = (
+  const handleMarkEaten = (
     e: React.MouseEvent,
     mealType: "breakfast" | "lunch" | "dinner" | "snack",
     label: string
   ) => {
     e.stopPropagation();
     e.preventDefault();
-    const { data: updated, newStatus } = toggleMealEatenStatus(mealType, userId);
-    setDietData(updated);
+    if (dietData[mealType]?.isEaten) return; // Permanent! Once eaten, no undo!
 
-    if (newStatus) {
-      toast.success(`Marked ${label} as Eaten! 🥗`);
-    } else {
-      toast.info(`Updated ${label} status`);
-    }
+    const updated = setMealSelection(
+      mealType,
+      {
+        title: dietData[mealType]?.selectedItem || getDefaultMealName(mealType),
+        calories: dietData[mealType]?.calories || getDefaultMealCalories(mealType),
+        tags: "Recommended",
+      },
+      true,
+      userId
+    );
+
+    setDietData(updated);
+    toast.success(`Marked ${label} as Eaten! 🥗`);
   };
 
   const mealsList = [
@@ -276,10 +284,11 @@ export function Page() {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={(e) => handleToggleEaten(e, m.type, m.title)}
+                    disabled={isEaten}
+                    onClick={(e) => handleMarkEaten(e, m.type, m.title)}
                     className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition-all ${
                       isEaten
-                        ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                        ? "bg-emerald-500 text-white cursor-default opacity-95"
                         : "bg-muted text-muted-foreground hover:bg-primary-soft hover:text-primary"
                     }`}
                   >
@@ -289,7 +298,7 @@ export function Page() {
                       </>
                     ) : (
                       <>
-                        <Circle className="h-3.5 w-3.5 text-muted-foreground" /> Eaten?
+                        <Circle className="h-3.5 w-3.5 text-muted-foreground" /> Mark as Eaten
                       </>
                     )}
                   </button>
