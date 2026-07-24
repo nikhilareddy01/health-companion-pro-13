@@ -10,9 +10,10 @@ if (!supabaseUrl || !supabaseServiceKey || supabaseUrl === 'YOUR_SUPABASE_URL') 
   console.warn('[Backend] WARNING: Supabase URL or Service Role Key is missing in .env!');
 }
 
-// Create a Supabase client with the service role key. 
-// This client bypasses Row Level Security (RLS). Never expose this key on the frontend!
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+const validUrl = (supabaseUrl && supabaseUrl !== 'YOUR_SUPABASE_URL') ? supabaseUrl : 'https://demo-placeholder.supabase.co';
+const validKey = (supabaseServiceKey && supabaseServiceKey !== 'YOUR_SUPABASE_SERVICE_ROLE_KEY') ? supabaseServiceKey : 'demo-placeholder-key';
+
+export const supabaseAdmin = createClient(validUrl, validKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
