@@ -5,6 +5,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    base: "./",
     server: {
       host: true,
       port: 8081,
