@@ -28,12 +28,12 @@ jobs:
       - name: Stage 2 - Install Node.js & Dependencies
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
           cache: 'npm'
 
       - name: Install Project Dependencies
         run: |
-          npm ci || npm install --legacy-peer-deps
+          npm install --legacy-peer-deps
 
       - name: Stage 3 - Type Check & Linting
         run: |
@@ -83,7 +83,7 @@ jobs:
       - name: Setup Node.js & Python
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
 
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
@@ -92,7 +92,7 @@ jobs:
 
       - name: Stage 2 - Install Dependencies
         run: |
-          npm ci || npm install --legacy-peer-deps
+          npm install --legacy-peer-deps
           pip install pandas openpyxl reportlab pillow selenium webdriver-manager || true
 
       - name: Stage 8 - Execute E2E Test Suite
