@@ -1,16 +1,46 @@
 export const getApiUrl = (path: string = "") => {
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  let host = hostname;
-  
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    // If we are running under Capacitor, redirect requests to the host PC's Wi-Fi IP address
-    const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
-    if (isCapacitor) {
-      host = '192.168.1.17';
+  let baseUrl = '';
+
+  if (typeof window !== 'undefined') {
+    const custom = localStorage.getItem('custom_backend_url');
+    if (custom && custom.trim() !== '') {
+      baseUrl = custom.trim();
     }
   }
-  
-  // Normalize path suffix prefix
-  const apiPath = path.startsWith("/") ? path : `/${path}`;
-  return `http://${host}:5000${apiPath}`;
+
+  if (!baseUrl && import.meta.env.VITE_BACKEND_URL) {
+    baseUrl = import.meta.env.VITE_BACKEND_URL;
+  }
+
+  if (!baseUrl) {
+    if (typeof window !== 'undefined') {
+      const isCapacitor = !!(window as any).Capacitor;
+      const hostname = window.location.hostname;
+
+      if (isCapacitor) {
+        baseUrl = 'http://192.168.1.17:5000';
+      } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        baseUrl = 'http://localhost:5000';
+      } else {
+        // Web deployment fallback — uses local/network host IP or default server
+        baseUrl = `http://${hostname}:5000`;
+      }
+    } else {
+      baseUrl = 'http://localhost:5000';
+    }
+  }
+
+  baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const apiPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${apiPath}`;
+};
+
+export const setCustomBackendUrl = (url: string) => {
+  if (typeof window !== 'undefined') {
+    if (url && url.trim() !== '') {
+      localStorage.setItem('custom_backend_url', url.trim());
+    } else {
+      localStorage.removeItem('custom_backend_url');
+    }
+  }
 };

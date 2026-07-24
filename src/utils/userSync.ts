@@ -14,7 +14,7 @@ export async function pushUserCloud(userId?: string): Promise<void> {
   const dataSnapshot: Record<string, string> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && (key.includes(uid) || key.startsWith('profile_') || key.startsWith('diet_') || key.startsWith('medicines') || key.startsWith('water_intake_') || key.startsWith('eaten_meals_') || key.startsWith('demo_'))) {
+    if (key && (key.includes(uid) || key.startsWith('profile_') || key.startsWith('diet_') || key.startsWith('medicines') || key.startsWith('water_intake_') || key.startsWith('eaten_meals_') || key.startsWith('daily_diet_') || key.startsWith('user_conditions_') || key.startsWith('demo_'))) {
       const val = localStorage.getItem(key);
       if (val !== null) {
         dataSnapshot[key] = val;
@@ -22,7 +22,6 @@ export async function pushUserCloud(userId?: string): Promise<void> {
     }
   }
 
-  // Save to cloud backup storage
   try {
     await fetch(getApiUrl('/api/profiles/sync_userdata'), {
       method: 'POST',
@@ -30,7 +29,7 @@ export async function pushUserCloud(userId?: string): Promise<void> {
       body: JSON.stringify({ userId: uid, fullData: dataSnapshot })
     });
   } catch (err) {
-    console.warn('[UserSync] Cloud push notice:', err);
+    console.warn('[UserSync] Push error:', err);
   }
 }
 
@@ -48,20 +47,22 @@ export async function pullUserCloud(userId?: string): Promise<boolean> {
       let updated = false;
       Object.keys(json.data).forEach((key) => {
         if (json.data[key] !== null && json.data[key] !== undefined) {
-          localStorage.setItem(key, String(json.data[key]));
-          updated = true;
+          const current = localStorage.getItem(key);
+          if (current !== String(json.data[key])) {
+            localStorage.setItem(key, String(json.data[key]));
+            updated = true;
+          }
         }
       });
 
       if (updated) {
-        // Dispatch storage & custom sync events for real-time UI refresh
         window.dispatchEvent(new Event('storage'));
         window.dispatchEvent(new CustomEvent('user-cloud-synced', { detail: { userId: uid } }));
         return true;
       }
     }
   } catch (err) {
-    console.warn('[UserSync] Cloud pull notice:', err);
+    console.warn('[UserSync] Pull error:', err);
   }
   return false;
 }
@@ -72,4 +73,36 @@ export function saveAndSync(key: string, value: string, userId?: string): void {
   const uid = userId || getActiveUserId();
   pushUserCloud(uid).catch(() => void 0);
   window.dispatchEvent(new Event('storage'));
+}
+
+// Background Live Synchronization for Web & App
+let syncIntervalId: any = null;
+
+export function startLiveBackgroundSync(): void {
+  if (typeof window === 'undefined') return;
+  if (syncIntervalId) return;
+
+  const runSyncCycle = () => {
+    const uid = getActiveUserId();
+    if (uid) {
+      pullUserCloud(uid).then(() => {
+        pushUserCloud(uid).catch(() => void 0);
+      }).catch(() => void 0);
+    }
+  };
+
+  // Immediate pull on start
+  runSyncCycle();
+
+  // Poll every 4 seconds for continuous live bi-directional sync
+  syncIntervalId = setInterval(runSyncCycle, 4000);
+
+  // Sync immediately when switching back to the app/tab
+  window.addEventListener('focus', runSyncCycle);
+  window.addEventListener('online', runSyncCycle);
+}
+
+// Auto-start live sync when file is imported
+if (typeof window !== 'undefined') {
+  startLiveBackgroundSync();
 }
